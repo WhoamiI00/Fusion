@@ -390,8 +390,12 @@ class CourseProposalTrackingFile(ModelForm):
 
 class CourseInstructorForm(forms.ModelForm):
     # next_year = datetime.now().year +1
-    max_year = Batch.objects.aggregate(max_year=Max('year'))['max_year']
-    next_year = max_year + 1 if max_year else datetime.now().year + 1
+    try:
+        max_year = Batch.objects.aggregate(max_year=Max('year'))['max_year']
+        next_year = max_year + 1 if max_year else datetime.now().year + 1
+    except:
+        # If the table doesn't exist yet, use current year + 1
+        next_year = datetime.now().year + 1
     course_id = forms.ModelChoiceField(
         queryset=Course.objects.all(),
         label="Select Course",
