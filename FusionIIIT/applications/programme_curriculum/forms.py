@@ -410,8 +410,16 @@ class CourseInstructorForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'ui fluid search selection dropdown'})
     )
 
+    # Safely get year choices
+    try:
+        year_choices = [('', 'Choose a year')] + [(year, year) for year in Batch.objects.values_list('year', flat=True).distinct()] + [(next_year, next_year)]
+    except:
+        # If the Batch table doesn't exist yet, just use current year and next year
+        current_year = datetime.now().year
+        year_choices = [('', 'Choose a year')] + [(current_year, current_year), (current_year + 1, current_year + 1)]
+    
     year = forms.ChoiceField(
-        choices=[('', 'Choose a year')] + [(year, year) for year in Batch.objects.values_list('year', flat=True).distinct()]+[(next_year, next_year)],
+        choices=year_choices,
         label="Select Year",
         widget=forms.Select(attrs={'class': 'ui fluid search selection dropdown'})
     )
