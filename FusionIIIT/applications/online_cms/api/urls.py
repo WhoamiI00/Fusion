@@ -1,11 +1,11 @@
-# from django.conf.urls import url
+# from django.urls import re_path as url
 
 # from . import views
 
 # urlpatterns = [
 #     url(r'^courses', views.viewcourses_serialized, name="registered_courses")
 # ]
-from django.conf.urls import url
+from django.urls import re_path as url
 # from .views import course
 from . import views
 urlpatterns = [

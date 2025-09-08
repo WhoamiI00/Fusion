@@ -1,6 +1,6 @@
-from django.conf.urls import url, include 
+from django.urls import re_path as url, include 
 
-from django.conf.urls import url, include
+from django.urls import re_path as url, include
 from applications.hr2 import views
 from applications.hr2.api import form_views
 

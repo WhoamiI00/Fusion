@@ -1,5 +1,5 @@
 from django.urls import include,path
-from django.conf.urls import url
+from django.urls import re_path as url
 from . import views
 from . import tests
 # from ..research_procedures.api.views import create_expenditure

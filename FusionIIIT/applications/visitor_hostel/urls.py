@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path as url
 from applications.visitor_hostel.api.views  import AddToInventory, InventoryListView
 
 from . import views

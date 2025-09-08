@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from .views import *
 from django.urls import include,path
-from django.conf.urls import url
+from django.urls import re_path as url
 from . import views
 
 app_name="research_procedures"
