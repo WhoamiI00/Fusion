@@ -1,0 +1,777 @@
+Visitor Management System (VMS)
+Use Cases Document
+
+Document Version: 2.0
+Last Updated: February 4, 2026
+Based on: VMS Use Case Diagram v2.0
+
+ 
+1. Introduction
+This document provides detailed use case specifications for the Visitor Management System (VMS). Each use case describes a specific interaction between an actor (Security Personnel, Security Supervisor, or Administrator) and the system to accomplish a specific goal.
+
+The use cases are organized by actor role and include: use case ID, description, actors, preconditions, main flow, alternate flows, postconditions, business rules, and exceptions.
+ 
+2. Security Personnel Use Cases
+UC-001: Register Visitor
+Description:
+Security Personnel registers a new visitor or retrieves an existing visitor record to initiate the visit process.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Security Personnel is logged into the VMS
+• Visitor is present at the reception desk
+• Visitor has a valid government-issued ID
+Main Flow:
+1. Security Personnel initiates visitor registration process
+2. System displays registration form
+3. Security Personnel collects visitor information:
+   - Full name
+   - ID document type and number
+   - Contact phone number
+   - Purpose of visit
+   - Host employee name and department
+   - Expected visit duration
+4. Security Personnel captures visitor photograph
+5. System validates all mandatory fields (BR-001)
+6. System validates ID format (BR-002)
+7. System checks for duplicate visitor (BR-003)
+8. System performs blacklist check (BR-005)
+9. System records timestamp (BR-006)
+10. System saves visitor registration
+11. System displays registration confirmation with visitor ID
+Alternate Flows:
+A1. Existing Visitor Found (Step 7):
+   a. System displays existing visitor record
+   b. Security Personnel updates any changed information
+   c. System proceeds to step 8
+A2. Blacklisted Visitor Detected (Step 8):
+   a. System displays blacklist alert
+   b. System automatically notifies Security Supervisor
+   c. Security Personnel executes "Deny Entry" use case
+   d. Use case ends
+A3. Incomplete Information (Step 5):
+   a. System highlights missing mandatory fields
+   b. Security Personnel completes missing information
+   c. System proceeds to step 6
+Postconditions:
+• Visitor record is created or updated in the system
+• Visitor photograph is stored
+• Blacklist check is completed and logged
+• System is ready for ID verification step
+Related Business Rules:
+BR-001, BR-002, BR-003, BR-004, BR-005, BR-006
+Exceptions:
+E1. System failure during registration - save partial data, allow manual completion
+E2. Photo capture device failure - allow registration with placeholder, flag for later photo capture
+ 
+UC-002: Verify Visitor ID
+Description:
+Security Personnel physically verifies the visitor's identification document against the information recorded in the system.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Visitor is registered in the system (UC-001 completed)
+• Visitor presents physical ID document
+Main Flow:
+1. Security Personnel selects visitor record in system
+2. System displays visitor information and photograph
+3. Security Personnel physically examines ID document:
+   - Checks photo matches visitor face
+   - Verifies ID number matches system record
+   - Confirms ID is valid (not expired)
+   - Inspects for signs of tampering or forgery
+4. Security Personnel performs biometric verification (if enabled) (BR-008)
+5. Security Personnel confirms verification status in system
+6. System logs verification result (BR-010)
+7. System updates visitor status to "ID Verified"
+8. System enables next steps (issue pass or deny entry)
+Alternate Flows:
+A1. Biometric Verification Available (Step 4):
+   a. Security Personnel initiates biometric scan
+   b. System captures fingerprint or facial scan
+   c. System compares with stored biometric data
+   d. System displays match/no-match result
+   e. Security Personnel proceeds to step 5
+A2. Verification Fails (Step 5):
+   a. Security Personnel marks verification as failed
+   b. System prompts for failure reason
+   c. Security Personnel documents anomalies observed
+   d. System executes "Deny Entry" use case (BR-009)
+   e. System escalates to Security Supervisor
+   f. Use case ends
+Postconditions:
+• Verification result is logged in the system
+• Visitor status is updated
+• System enables appropriate next action
+Related Business Rules:
+BR-007, BR-008, BR-009, BR-010
+Exceptions:
+E1. Biometric device failure - proceed with manual verification only
+E2. Unclear ID document - escalate to supervisor for decision
+ 
+UC-003: Deny Entry
+Description:
+Security Personnel denies entry to a visitor based on verification failure, blacklist status, or other security concerns.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Visitor record exists in system
+• A valid reason for denial exists
+Main Flow:
+1. Security Personnel selects "Deny Entry" option
+2. System displays denial reason selection (BR-011)
+3. Security Personnel selects denial reason:
+   - Blacklisted visitor
+   - ID verification failed
+   - Incomplete documentation
+   - No host confirmation
+   - Outside approved time window
+   - Security concerns
+4. Security Personnel adds detailed remarks
+5. System records denial with timestamp (BR-012)
+6. System updates visitor status to "Entry Denied"
+7. Security Personnel explains denial reason to visitor professionally (BR-013)
+8. Security Personnel provides resolution instructions (if applicable)
+9. Security Personnel ensures visitor leaves the premises
+10. System generates denial notification
+Alternate Flows:
+A1. Blacklisted or High-Risk Visitor (Step 6):
+   a. System automatically alerts Security Supervisor (BR-014)
+   b. System logs as priority incident
+   c. Security Personnel waits for supervisor acknowledgment
+   d. Proceed to step 7
+A2. Visitor Disputes Denial (Step 7):
+   a. Security Personnel records appeal request
+   b. System escalates to Security Supervisor (BR-015)
+   c. Security Personnel directs visitor to waiting area
+   d. Security Personnel provides expected resolution time
+   e. Supervisor reviews and makes final decision
+Postconditions:
+• Denial is recorded in system with full details
+• Visitor status is updated to "Entry Denied"
+• Notifications sent to relevant parties
+• Visitor has left premises or is in designated waiting area
+Related Business Rules:
+BR-011, BR-012, BR-013, BR-014, BR-015
+Exceptions:
+E1. Visitor becomes aggressive - initiate emergency protocol, call security backup
+E2. System unavailable - record denial in manual log, update system when available
+ 
+UC-004: Issue Visitor Pass
+Description:
+Security Personnel issues a physical visitor pass to an approved visitor after successful registration and verification.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Visitor is registered (UC-001 completed)
+• ID verification passed (UC-002 completed)
+• Host confirmation received (if required)
+• Blacklist check cleared
+Main Flow:
+1. Security Personnel initiates pass issuance (BR-016)
+2. System validates all prerequisites are met
+3. System generates unique pass number
+4. System calculates pass validity period (BR-018):
+   - Based on purpose of visit
+   - Host approval duration
+   - Maximum allowed duration
+5. System generates pass content (BR-017):
+   - Pass number and QR/barcode
+   - Visitor name and photo
+   - Valid from and until date/time
+   - Authorized areas
+   - Host information
+   - Emergency contact
+6. System sends pass to printer
+7. Security Personnel retrieves printed pass
+8. Security Personnel verifies pass quality and readability
+9. Security Personnel explains pass usage to visitor (BR-020):
+   - Validity period
+   - Authorized areas
+   - Visible wearing requirement
+   - Return procedure
+10. Visitor acknowledges receipt and understanding
+11. System records pass issuance with timestamp
+12. System updates visitor status to "Pass Issued"
+Alternate Flows:
+A1. VIP Visitor (Step 4):
+   a. System identifies visitor as VIP
+   b. System applies VIP pass template (BR-021)
+   c. System sets extended validity
+   d. System grants additional access permissions
+   e. Proceed to step 5
+A2. Print Failure (Step 6):
+   a. System detects print error
+   b. Security Personnel checks printer
+   c. If resolved, retry from step 6
+   d. If not resolved, issue temporary manual pass
+   e. Flag for system pass printing when printer restored
+A3. Multi-day Pass Required (Step 4):
+   a. Security Personnel requests supervisor approval
+   b. Supervisor reviews and approves/denies
+   c. If approved, system sets extended validity
+   d. Proceed to step 5
+Postconditions:
+• Physical pass is issued to visitor
+• Pass details recorded in system
+• Visitor understands pass terms and conditions
+• System ready for entry recording
+Related Business Rules:
+BR-016, BR-017, BR-018, BR-019, BR-020, BR-021
+Exceptions:
+E1. Pass printer completely failed - issue temporary passes, maintain manual log
+E2. System database error - queue pass issuance for retry
+ 
+UC-005: Record Entry
+Description:
+Security Personnel records a visitor's entry into the facility by scanning their pass and verifying entry authorization.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Visitor has a valid pass (UC-004 completed)
+• Pass scanner is operational
+Main Flow:
+1. Visitor presents pass at entry checkpoint
+2. Security Personnel scans pass QR code/barcode (BR-023)
+3. System retrieves pass details
+4. System validates:
+   - Pass authenticity
+   - Pass validity (not expired)
+   - Authorized entry point
+   - Visitor not already inside (BR-025)
+5. System displays visitor information and photo
+6. Security Personnel visually verifies visitor matches photo
+7. Security Personnel checks for prohibited items (if applicable) (BR-026)
+8. If items need storage, Security Personnel records items
+9. System records entry timestamp (BR-022)
+10. System updates visitor status to "Inside"
+11. System logs entry details:
+    - Entry date/time
+    - Pass number
+    - Entry gate
+    - Recording personnel
+    - Items declared
+12. System displays confirmation message
+13. Security Personnel grants entry
+Alternate Flows:
+A1. Invalid/Expired Pass (Step 4):
+   a. System displays pass invalid alert (BR-024)
+   b. Security Personnel denies entry
+   c. Security Personnel directs visitor to registration desk
+   d. Use case ends
+A2. Visitor Already Inside (Step 4):
+   a. System alerts duplicate entry attempt (BR-025)
+   b. Security Personnel investigates
+   c. If previous exit not recorded, manually close previous visit
+   d. If pass shared/stolen, deny entry and escalate to supervisor
+A3. Items Declared (Step 7):
+   a. Security Personnel lists items in system (BR-026)
+   b. System generates item custody receipt
+   c. Security Personnel stores items securely
+   d. Provide claim tag to visitor
+   e. Proceed to step 9
+A4. Manual Entry (Scanner Failure):
+   a. Security Personnel manually enters pass number
+   b. System validates pass
+   c. Proceed to step 4
+Postconditions:
+• Entry is recorded in system with complete details
+• Visitor status updated to "Inside"
+• Items custody recorded (if applicable)
+• Visitor has entered the facility
+Related Business Rules:
+BR-022, BR-023, BR-024, BR-025, BR-026
+Exceptions:
+E1. System completely down - use manual entry log, sync when system restored
+E2. Pass unreadable - manual verification with visitor details and photo
+ 
+UC-006: Record Exit
+Description:
+Security Personnel records a visitor's exit from the facility, collects the pass, and closes the visit record.
+Primary Actor:
+Security Personnel
+Preconditions:
+• Visitor has entered facility (UC-005 completed)
+• Visitor status is "Inside"
+Main Flow:
+1. Visitor arrives at exit checkpoint
+2. Visitor returns physical pass to Security Personnel (BR-028)
+3. Security Personnel scans pass
+4. System retrieves visitor and entry information
+5. System validates pass matches visitor
+6. Security Personnel visually confirms visitor identity
+7. System calculates time spent inside (BR-030)
+8. If overstay detected, Security Personnel requests explanation
+9. If items were stored, Security Personnel retrieves items (BR-031)
+10. Visitor confirms item receipt
+11. System records exit timestamp (BR-027)
+12. System updates visitor status to "Exited"
+13. System marks pass as "Returned"
+14. System logs exit details:
+    - Exit date/time
+    - Pass number
+    - Exit gate
+    - Duration inside
+    - Overstay remarks (if any)
+15. Security Personnel physically stores returned pass
+16. System displays confirmation
+17. Security Personnel grants exit
+Alternate Flows:
+A1. Pass Lost by Visitor (Step 2):
+   a. Visitor reports lost pass (BR-029)
+   b. Security Personnel verifies visitor identity with ID
+   c. System checks for valid entry record
+   d. Security Personnel records pass as lost
+   e. System charges lost pass fee (if applicable)
+   f. System flags pass as invalid
+   g. Proceed to step 7
+A2. Significant Overstay (Step 8):
+   a. System alerts overstay threshold exceeded (BR-030)
+   b. Security Personnel documents explanation
+   c. Security Personnel reports to Security Supervisor
+   d. Supervisor reviews and may flag visitor
+   e. Proceed to step 9
+A3. Unclaimed Items (Step 9):
+   a. System checks for stored items (BR-031)
+   b. Security Personnel retrieves items
+   c. Visitor inspects and confirms all items returned
+   d. System updates item custody log
+   e. Proceed to step 11
+Postconditions:
+• Exit is recorded with complete details
+• Visitor status updated to "Exited"
+• Pass collected and stored
+• Items returned (if applicable)
+• Visit record closed
+Related Business Rules:
+BR-027, BR-028, BR-029, BR-030, BR-031, BR-032
+Exceptions:
+E1. System down - record exit manually, sync when restored
+E2. Visitor leaving without pass - verify identity, process as lost pass
+ 
+3. Security Supervisor Use Cases
+UC-007: Monitor Visitor Movement
+Description:
+Security Supervisor monitors real-time visitor movements, locations, and activities within the facility to ensure security and compliance.
+Primary Actor:
+Security Supervisor
+Preconditions:
+• Security Supervisor is logged into VMS
+• One or more visitors are currently inside facility
+Main Flow:
+1. Security Supervisor accesses monitoring dashboard (BR-033)
+2. System displays real-time overview:
+   - Total visitors currently inside
+   - Visitor list with status
+   - Recent entry/exit activities
+   - Active alerts and anomalies
+   - Overstay notifications
+   - Location map (if tracking enabled)
+3. Security Supervisor reviews visitor distribution across zones (BR-036)
+4. System highlights any visitors in unauthorized areas (BR-035)
+5. Security Supervisor analyzes patterns (BR-037):
+   - Frequent visitors
+   - Unusual visit durations
+   - Suspicious movement patterns
+   - Peak activity times
+6. For any alerts, Security Supervisor investigates
+7. Security Supervisor may activate enhanced tracking (BR-034)
+8. System updates dashboard in real-time
+9. Security Supervisor documents observations
+Alternate Flows:
+A1. Unauthorized Area Access Detected (Step 4):
+   a. System alerts visitor in restricted zone (BR-035)
+   b. Security Supervisor reviews CCTV feeds
+   c. Security Supervisor dispatches security personnel
+   d. Incident report created automatically
+   e. Security Supervisor monitors resolution
+A2. Enhanced Tracking Required (Step 7):
+   a. Security Supervisor activates enhanced mode (BR-034)
+   b. System requires checkpoint scans at intervals
+   c. System tracks zone-based locations
+   d. Security Supervisor assigns escorts if needed
+   e. System displays movement paths on map
+A3. Overcrowding Detected (Step 3):
+   a. System alerts high visitor density (BR-036)
+   b. Security Supervisor evaluates zone capacity
+   c. Security Supervisor may restrict new entries
+   d. Security Supervisor redistributes security personnel
+Postconditions:
+• Visitor activities monitored and documented
+• Alerts investigated and resolved
+• Patterns analyzed for security insights
+• Corrective actions initiated if needed
+Related Business Rules:
+BR-033, BR-034, BR-035, BR-036, BR-037
+Exceptions:
+E1. Tracking system malfunction - rely on manual reporting and CCTV
+E2. Multiple simultaneous alerts - prioritize by severity
+ 
+UC-008: Handle Security Issues
+Description:
+Security Supervisor manages security incidents involving visitors, from identification through resolution.
+Primary Actor:
+Security Supervisor
+Preconditions:
+• Security issue has been identified
+• Security Supervisor has been notified
+Main Flow:
+1. Security Supervisor receives security issue notification
+2. Security Supervisor accesses incident details
+3. Security Supervisor assesses severity (BR-038):
+   - Critical: immediate safety threat
+   - High: significant security breach
+   - Medium: policy violation
+   - Low: procedural non-compliance
+4. System creates incident record (BR-041)
+5. Based on severity, Security Supervisor takes appropriate action:
+   - For Critical: initiate emergency protocol (BR-039)
+   - For High: immediate investigation and containment
+   - For Medium/Low: standard investigation
+6. Security Supervisor documents incident (BR-041):
+   - Issue type and severity
+   - Date/time and location
+   - Involved parties
+   - Actions taken
+   - Evidence collected
+7. Security Supervisor may restrict/remove visitor (BR-040)
+8. Security Supervisor notifies relevant parties (BR-042)
+9. Security Supervisor ensures evidence preservation (BR-043)
+10. Security Supervisor assigns follow-up actions
+11. System updates incident status
+12. Security Supervisor reviews and closes incident
+Alternate Flows:
+A1. Critical Security Issue (Step 5):
+   a. Security Supervisor initiates lockdown (BR-039)
+   b. All security personnel alerted
+   c. Emergency services contacted if needed
+   d. Crisis management team activated
+   e. All actions logged in real-time
+   f. Proceed to step 6
+A2. Visitor Removal Required (Step 7):
+   a. Security Supervisor issues removal order (BR-040)
+   b. Security personnel escort visitor out
+   c. Visitor pass revoked immediately
+   d. Visitor added to temporary watch list
+   e. Consider blacklist addition
+   f. Law enforcement contacted if necessary
+A3. Management Notification (Step 8):
+   a. For High/Critical issues, notify management (BR-042)
+   b. Prepare incident summary
+   c. Coordinate with facility management
+   d. Update communication log
+Postconditions:
+• Security issue documented in incident report
+• Appropriate actions taken to resolve/contain issue
+• Evidence preserved
+• Relevant parties notified
+• Follow-up actions assigned
+Related Business Rules:
+BR-038, BR-039, BR-040, BR-041, BR-042, BR-043
+Exceptions:
+E1. Supervisor unavailable - senior security personnel may act, escalate immediately
+E2. Multiple simultaneous incidents - triage and prioritize, request additional support
+ 
+4. Administrator Use Cases
+UC-009: View Visitor Records
+Description:
+Administrator accesses and reviews complete visitor records for reporting, auditing, or investigation purposes.
+Primary Actor:
+Administrator
+Preconditions:
+• Administrator is logged into VMS with appropriate permissions
+Main Flow:
+1. Administrator accesses visitor records module
+2. System displays search interface (BR-045)
+3. Administrator specifies search criteria:
+   - Visitor name or ID number
+   - Date range
+   - Host name
+   - Purpose of visit
+   - Blacklist status
+   - Pass number
+   - Any combination of above
+4. System executes search query
+5. System displays matching records (BR-044)
+6. Administrator selects specific record to view details
+7. System displays complete record:
+   - Visitor information
+   - All historical visits
+   - Entry/exit logs
+   - Incident reports
+   - Pass history
+   - Blacklist status and reasons
+   - Denials and appeals
+8. Administrator reviews information
+9. Administrator may add notes/comments (BR-046)
+10. System logs record access (BR-047)
+Alternate Flows:
+A1. Modify Record Information (Step 9):
+   a. Administrator selects edit option
+   b. System allows editing of specific fields (BR-046)
+   c. Administrator makes changes
+   d. System validates changes
+   e. Administrator provides reason for modification
+   f. System logs modification with audit trail
+   g. System saves changes
+A2. Export Records (Step 8):
+   a. Administrator selects export option
+   b. System prompts for format (PDF, Excel, CSV)
+   c. System generates export file
+   d. System masks sensitive data per privacy rules (BR-047)
+   e. System logs export action
+   f. Administrator downloads file
+A3. No Records Found (Step 4):
+   a. System displays "No matching records"
+   b. Administrator refines search criteria
+   c. Return to step 3
+Postconditions:
+• Record access logged for audit
+• Information reviewed or exported
+• Any modifications recorded with audit trail
+Related Business Rules:
+BR-044, BR-045, BR-046, BR-047, BR-048
+Exceptions:
+E1. Database performance issue - implement pagination, optimize query
+E2. Privacy violation attempt - block access, log security event
+ 
+UC-010: Generate Reports
+Description:
+Administrator creates standard or custom reports on visitor activities, security metrics, and system usage.
+Primary Actor:
+Administrator
+Preconditions:
+• Administrator is logged into VMS
+• Sufficient data exists for reporting
+Main Flow:
+1. Administrator accesses reports module
+2. System displays report options:
+   - Standard reports (BR-049)
+   - Custom report builder (BR-050)
+   - Scheduled reports (BR-052)
+3. Administrator selects report type
+4. Administrator configures report parameters:
+   - Date range
+   - Filters and groupings
+   - Sort order
+   - Output format (PDF, Excel, CSV)
+5. Administrator previews report structure
+6. Administrator confirms report generation
+7. System validates parameters (BR-051)
+8. System generates report:
+   - Queries database with optimized query
+   - Applies filters and calculations
+   - Formats output per specifications
+   - Includes metadata and timestamps (BR-051)
+9. System completes generation within SLA (BR-053)
+10. System applies security measures (BR-054)
+11. Administrator reviews report
+12. Administrator downloads or distributes report
+13. System logs report generation
+Alternate Flows:
+A1. Custom Report Builder (Step 3):
+   a. Administrator selects custom builder (BR-050)
+   b. System displays field selection interface
+   c. Administrator drags fields to report
+   d. Administrator sets grouping and filters
+   e. Administrator previews sample data
+   f. Proceed to step 6
+A2. Schedule Report (Step 3):
+   a. Administrator selects scheduled reports (BR-052)
+   b. Administrator configures report parameters
+   c. Administrator sets schedule (daily/weekly/monthly)
+   d. Administrator adds email distribution list
+   e. Administrator saves schedule
+   f. System confirms and adds to scheduler
+A3. Large Dataset (Step 9):
+   a. System detects large dataset (BR-053)
+   b. System offers background processing
+   c. Administrator confirms background mode
+   d. System processes in background
+   e. System emails report when complete
+A4. Standard Report Selection (Step 3):
+   a. Administrator selects from standard reports (BR-049):
+      - Daily visitor summary
+      - Entry/exit logs
+      - Overstay report
+      - Security incidents
+      - Denial statistics
+   b. Proceed to step 4 with pre-configured template
+Postconditions:
+• Report generated successfully
+• Report secured per policy
+• Generation logged for audit
+• Report delivered to requester
+Related Business Rules:
+BR-049, BR-050, BR-051, BR-052, BR-053, BR-054
+Exceptions:
+E1. Report generation timeout - offer alternative: smaller date range, background processing
+E2. Insufficient data - inform administrator, suggest date range adjustment
+ 
+UC-011: Manage Security Personnel
+Description:
+Administrator manages security personnel user accounts, roles, permissions, and activity monitoring.
+Primary Actor:
+Administrator
+Preconditions:
+• Administrator is logged into VMS with admin privileges
+Main Flow:
+1. Administrator accesses user management module
+2. System displays personnel list with current status
+3. Administrator selects action:
+   - Create new account (BR-055)
+   - Modify existing account
+   - View personnel activity (BR-058)
+   - Manage training records (BR-059)
+4. For new account creation:
+   a. Administrator enters personnel details (BR-057):
+      - Name and employee ID
+      - Contact information
+      - Assigned location and shift
+      - Emergency contact
+   b. Administrator assigns role and permissions (BR-056)
+   c. Administrator sets account settings
+   d. System generates username and temporary password
+   e. System creates account
+   f. System sends credentials to personnel
+5. For account modification:
+   a. Administrator selects personnel record
+   b. Administrator updates necessary fields
+   c. System validates changes
+   d. Administrator confirms modifications
+   e. System logs changes (BR-060)
+6. System enforces role-based access (BR-056)
+7. System maintains audit trail (BR-060)
+Alternate Flows:
+A1. Monitor Personnel Activity (Step 3):
+   a. Administrator selects activity monitoring (BR-058)
+   b. System displays personnel dashboard:
+      - Login/logout times
+      - Tasks performed
+      - Visitors processed
+      - Incidents handled
+      - Performance metrics
+   c. Administrator reviews activity
+   d. Administrator may export activity report
+A2. Manage Training (Step 3):
+   a. Administrator selects training management (BR-059)
+   b. System shows training status for all personnel
+   c. Administrator records training completion
+   d. System updates certifications
+   e. System unlocks accounts if training was overdue
+A3. Disable Account (Step 5):
+   a. Administrator selects disable option
+   b. Administrator provides reason
+   c. System confirms action
+   d. System disables account immediately
+   e. Active sessions terminated
+   f. System logs action with reason (BR-060)
+A4. Reset Password (Step 5):
+   a. Administrator selects password reset
+   b. System generates temporary password
+   c. System forces password change on next login
+   d. System notifies personnel via email
+Postconditions:
+• Personnel account created/modified/disabled
+• Role and permissions properly assigned
+• All actions logged in audit trail
+• Personnel notified of account changes
+Related Business Rules:
+BR-055, BR-056, BR-057, BR-058, BR-059, BR-060
+Exceptions:
+E1. Duplicate username - suggest alternative, auto-generate if needed
+E2. Invalid role assignment - validate against allowed roles, prevent self-assignment
+ 
+UC-012: Manage VIP Permission
+Description:
+Administrator manages VIP visitor designations, permissions, access privileges, and special handling requirements.
+Primary Actor:
+Administrator
+Preconditions:
+• Administrator is logged into VMS with admin privileges
+• VIP designation approval obtained
+Main Flow:
+1. Administrator accesses VIP management module
+2. System displays current VIP list (BR-064)
+3. Administrator selects action:
+   - Add new VIP
+   - Modify VIP permissions
+   - Review VIP access (BR-066)
+   - Remove VIP status
+4. For new VIP addition:
+   a. Administrator enters VIP details:
+      - Name and designation
+      - Organization/affiliation
+      - VIP level/category (BR-061)
+      - Contact person
+   b. Administrator provides justification (BR-061)
+   c. Administrator sets access privileges (BR-063):
+      - Priority entry/exit
+      - Extended pass validity
+      - Authorized areas
+      - Security check waivers
+      - Special requirements
+   d. Administrator sets validity period
+   e. Administrator configures notification protocol (BR-065)
+   f. System validates and saves VIP record
+5. For VIP pre-registration (BR-062):
+   a. Administrator creates advance entry approval
+   b. Sets recurring visit authorization if needed
+   c. Assigns escort if required
+   d. Reserves parking if applicable
+6. System applies data privacy protections (BR-067)
+7. System logs all VIP management actions
+Alternate Flows:
+A1. Modify VIP Permissions (Step 3):
+   a. Administrator selects VIP record
+   b. System displays current permissions (BR-063)
+   c. Administrator modifies access privileges
+   d. Administrator provides reason for change
+   e. System validates changes
+   f. System logs modification
+   g. System notifies relevant personnel
+A2. Quarterly VIP Review (Step 3):
+   a. Administrator initiates periodic review (BR-066)
+   b. System lists VIPs due for review
+   c. Administrator reviews each VIP:
+      - Validates continued need
+      - Reviews access patterns
+      - Updates expiry dates
+   d. Administrator documents review
+   e. Administrator renews or expires VIP status
+A3. Remove VIP Status (Step 3):
+   a. Administrator selects remove option
+   b. Administrator provides reason
+   c. System confirms removal
+   d. System revokes special privileges
+   e. System notifies relevant parties
+   f. Visitor reverts to standard processing
+A4. VIP Arrival Notification (Triggered):
+   a. VIP visitor registers/arrives
+   b. System identifies VIP status
+   c. System triggers notifications (BR-065):
+      - Alert designated personnel
+      - Notify department heads
+      - Display VIP status to security
+   d. System logs VIP visit details
+Postconditions:
+• VIP status granted/modified/removed
+• Special privileges configured
+• Notification protocols set
+• All actions logged securely
+• Privacy protections applied
+Related Business Rules:
+BR-061, BR-062, BR-063, BR-064, BR-065, BR-066, BR-067
+Exceptions:
+E1. Conflicting VIP permissions - flag conflict, require manual resolution
+E2. Unauthorized VIP designation attempt - block action, log security event
+ 
+5. Document Control
+Version History:
+
+Version	Date	Author	Description
+1.0	Jan 2025	System Analyst	Initial version based on old use case model
+2.0	Feb 2026	System Analyst	Complete revision based on new use case diagram with 3 actors
+
+Approval:
+This document has been reviewed and approved for implementation.

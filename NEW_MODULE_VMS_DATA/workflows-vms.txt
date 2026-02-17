@@ -1,0 +1,788 @@
+Visitor Management System (VMS)
+Workflows Document
+
+Document Version: 2.0
+Last Updated: February 4, 2026
+Based on: VMS Use Case Diagram v2.0
+
+ 
+1. Introduction
+This document describes the detailed workflows for the Visitor Management System (VMS). Each workflow represents a sequence of activities, decisions, and system interactions that occur when actors perform their use cases. Workflows show how different use cases connect and how business rules govern the process flow.
+
+Workflows are presented using activity descriptions with nodes (use cases, decisions, end states) and directed edges (transitions with business rule guards).
+ 
+WF-001: Complete Visitor Entry Process
+Description:
+End-to-end workflow from visitor arrival through facility entry, covering registration, verification, and access granting.
+Actors Involved:
+Security Personnel
+Trigger:
+Visitor arrives at facility reception
+Workflow Steps:
+1. START: Visitor Arrival
+
+2. UC-001: Register Visitor
+   • Security Personnel collects visitor information
+   • System validates data (BR-001, BR-002)
+   • System checks for duplicate (BR-003)
+   • System performs blacklist check (BR-005)
+
+3. DECISION: Blacklist Status
+   [IF] Visitor is blacklisted → Guard: BR-005
+      → UC-003: Deny Entry
+      → Notify Security Supervisor
+      → END: Entry Denied
+   [ELSE] Visitor not blacklisted
+      → Continue to Step 4
+
+4. UC-002: Verify Visitor ID
+   • Security Personnel examines physical ID
+   • Performs biometric verification if enabled (BR-008)
+   • System logs verification result (BR-010)
+
+5. DECISION: Verification Result
+   [IF] Verification fails → Guard: BR-009
+      → UC-003: Deny Entry
+      → Record failed verification
+      → Escalate to Security Supervisor
+      → END: Entry Denied
+   [ELSE] Verification passes
+      → Continue to Step 6
+
+6. UC-004: Issue Visitor Pass
+   • System validates prerequisites (BR-016)
+   • System generates pass with QR code (BR-017)
+   • System calculates validity period (BR-018)
+   • Security Personnel prints and issues pass (BR-020)
+
+7. UC-005: Record Entry
+   • Security Personnel scans pass at entry gate (BR-023)
+   • System validates pass authenticity and status
+   • System checks visitor not already inside (BR-025)
+   • System records entry timestamp (BR-022)
+   • System updates status to "Inside"
+
+8. END: Visitor Entered Successfully
+Alternate Flows:
+• A1: VIP Fast Track - If visitor is VIP (BR-021), skip some verification steps
+• A2: Multi-day Pass - Requires supervisor approval for extended validity
+• A3: Items Declaration - Additional step if visitor carries items (BR-026)
+Related Business Rules:
+BR-001, BR-002, BR-003, BR-005, BR-008, BR-009, BR-010, BR-016, BR-017, BR-018, BR-020, BR-021, BR-022, BR-023, BR-025, BR-026
+ 
+WF-002: Visitor Exit and Closure Process
+Description:
+Workflow for recording visitor exit, returning pass, and closing visit record.
+Actors Involved:
+Security Personnel
+Trigger:
+Visitor arrives at exit checkpoint
+Workflow Steps:
+1. START: Visitor at Exit
+
+2. DECISION: Pass Available?
+   [IF] Visitor has pass
+      → Continue to Step 3
+   [ELSE] Pass lost/missing → Guard: BR-029
+      → Security Personnel verifies ID
+      → Check system for entry record
+      → Record as lost pass
+      → Charge lost pass fee (if applicable)
+      → Flag pass as invalid
+      → Continue to Step 4
+
+3. UC-006: Record Exit
+   • Security Personnel scans pass
+   • System retrieves visitor information
+   • System validates pass matches visitor (BR-028)
+
+4. System Calculate Duration
+   • System calculates time spent inside (BR-030)
+
+5. DECISION: Overstay Check
+   [IF] Overstay detected (duration > approved + threshold) → Guard: BR-030
+      → Security Personnel requests explanation
+      → Record overstay remarks
+      → If significant overstay, report to Supervisor
+      → Continue to Step 6
+   [ELSE] Within approved duration
+      → Continue to Step 6
+
+6. DECISION: Items Stored?
+   [IF] Items were deposited → Guard: BR-031
+      → Security Personnel retrieves items
+      → Visitor confirms receipt
+      → Update item custody log
+      → Continue to Step 7
+   [ELSE] No items stored
+      → Continue to Step 7
+
+7. Complete Exit Recording
+   • System records exit timestamp (BR-027)
+   • System updates status to "Exited"
+   • System marks pass as "Returned"
+   • Security Personnel collects physical pass
+   • Security Personnel grants exit
+
+8. END: Visit Closed Successfully
+Related Business Rules:
+BR-027, BR-028, BR-029, BR-030, BR-031, BR-032
+ 
+WF-003: Security Issue Management Workflow
+Description:
+Workflow for handling security incidents from detection through resolution.
+Actors Involved:
+Security Supervisor, Security Personnel
+Trigger:
+Security issue detected or reported
+Workflow Steps:
+1. START: Security Issue Detected
+   • Issue identified by system alert, personnel report, or monitoring
+
+2. System Alert Security Supervisor
+   • Notification sent immediately
+   • Basic incident details provided
+
+3. UC-008: Handle Security Issues
+   • Security Supervisor reviews incident details
+   • System creates incident record (BR-041)
+
+4. Assess Severity (BR-038)
+   • Critical: Immediate safety threat
+   • High: Significant security breach
+   • Medium: Policy violation
+   • Low: Procedural non-compliance
+
+5. DECISION: Severity Level
+
+   [CASE] Critical → Guard: BR-039
+      → Initiate emergency lockdown
+      → Alert all security personnel
+      → Contact emergency services
+      → Activate crisis management team
+      → Log all actions in real-time
+      → Continue to Step 6
+
+   [CASE] High
+      → Immediate investigation initiated
+      → Containment actions deployed
+      → Notify management (BR-042)
+      → Continue to Step 6
+
+   [CASE] Medium/Low
+      → Standard investigation procedure
+      → Document and analyze
+      → Continue to Step 6
+
+6. Document Incident (BR-041)
+   • Record issue type and severity
+   • Document date/time and location
+   • List involved parties
+   • Detail actions taken
+   • Collect evidence (BR-043)
+
+7. DECISION: Visitor Action Required?
+   [IF] Visitor involved and requires action → Guard: BR-040
+      → Security Supervisor may:
+         • Restrict movement to designated areas
+         • Revoke pass immediately
+         • Demand immediate exit
+         • Add to temporary watch list
+         • Involve law enforcement
+      → All actions documented with justification
+      → Continue to Step 8
+   [ELSE] No visitor action needed
+      → Continue to Step 8
+
+8. Preserve Evidence (BR-043)
+   • Secure CCTV footage
+   • Backup access logs
+   • Store physical evidence
+   • Maintain chain of custody
+
+9. Notify Stakeholders (BR-042)
+   • Notify management for High/Critical
+   • Brief security personnel
+   • Coordinate with facility management
+   • Update communication logs
+
+10. Assign Follow-up Actions
+    • Additional investigation tasks
+    • Preventive measures
+    • Policy updates
+
+11. Monitor Resolution
+    • Track follow-up completion
+    • Verify effectiveness
+
+12. Close Incident
+    • Security Supervisor reviews and approves closure
+    • System updates incident status to "Closed"
+
+13. END: Incident Resolved
+Related Business Rules:
+BR-038, BR-039, BR-040, BR-041, BR-042, BR-043
+ 
+WF-004: Real-time Visitor Movement Monitoring
+Description:
+Continuous workflow for monitoring visitor activities and detecting anomalies.
+Actors Involved:
+Security Supervisor, System (Automated)
+Trigger:
+Continuous operation during facility hours
+Workflow Steps:
+1. START: Monitoring Active
+
+2. UC-007: Monitor Visitor Movement
+   • Security Supervisor accesses dashboard (BR-033)
+   • System displays real-time data
+
+3. System Continuous Monitoring Loop
+
+   3a. Update Dashboard
+      • Refresh visitor count and status
+      • Update location information
+      • Show entry/exit activities
+      • Display alerts
+
+   3b. Check Visitor Distribution (BR-036)
+      • Monitor zone occupancy
+      • Calculate visitor density
+      • Identify overcrowding
+
+   3c. Validate Area Access (BR-035)
+      • Cross-check visitor locations vs authorized areas
+      • Detect unauthorized zone access
+
+   3d. Analyze Patterns (BR-037)
+      • Identify frequent visitors
+      • Detect unusual durations
+      • Flag suspicious movements
+      • Generate heatmaps
+
+   3e. Check for Anomalies
+      • Overstay situations
+      • Multiple simultaneous entries
+      • Unusual access patterns
+      • Lost visitor tracking
+
+4. DECISION: Alert Condition Detected?
+
+   [IF] Unauthorized Area Access → Guard: BR-035
+      → System generates alert
+      → Security Supervisor reviews CCTV
+      → Dispatch security personnel to location
+      → Create incident report automatically
+      → Monitor resolution
+      → Return to Step 3
+
+   [IF] Overcrowding Detected → Guard: BR-036
+      → System alerts high density
+      → Security Supervisor evaluates capacity
+      → May restrict new entries temporarily
+      → Redistribute security personnel
+      → Return to Step 3
+
+   [IF] Overstay Threshold
+      → System generates overstay alert
+      → Security Supervisor investigates
+      → May contact host or visitor
+      → Return to Step 3
+
+   [IF] Enhanced Tracking Needed → Guard: BR-034
+      → Security Supervisor activates enhanced mode
+      → System requires checkpoint scans
+      → Track zone-based movements
+      → Assign escorts if needed
+      → Display real-time paths
+      → Return to Step 3
+
+   [ELSE] No alerts
+      → Continue normal monitoring
+      → Return to Step 3
+
+5. Document Observations
+   • Security Supervisor logs findings
+   • System maintains activity history
+
+6. END: Shift End or System Shutdown
+   • Generate shift summary report
+   • Hand over to next shift
+Notes:
+This is a continuous loop workflow that runs throughout operational hours. Steps 3-4 repeat continuously with real-time updates.
+Related Business Rules:
+BR-033, BR-034, BR-035, BR-036, BR-037
+ 
+WF-005: Report Generation Process
+Description:
+Workflow for creating, customizing, and distributing visitor management reports.
+Actors Involved:
+Administrator
+Trigger:
+Administrator needs to generate report, or scheduled report execution
+Workflow Steps:
+1. START: Report Request
+
+2. UC-010: Generate Reports
+   • Administrator accesses reports module
+
+3. DECISION: Report Type Selection
+
+   [CASE] Standard Report → Guard: BR-049
+      → Administrator selects from predefined reports:
+         • Daily visitor summary
+         • Entry/exit logs
+         • Overstay report
+         • Blacklist activity
+         • Security incidents
+         • Host-wise visitor report
+         • Peak hour analysis
+         • Denial statistics
+      → Continue to Step 4
+
+   [CASE] Custom Report → Guard: BR-050
+      → Administrator opens custom builder
+      → Selects fields to include
+      → Sets grouping and sorting
+      → Defines filters and conditions
+      → Previews sample data
+      → Continue to Step 4
+
+   [CASE] Scheduled Report → Guard: BR-052
+      → Administrator configures report parameters
+      → Sets schedule (daily/weekly/monthly/custom)
+      → Adds email distribution list
+      → Saves schedule configuration
+      → System adds to scheduler
+      → END: Schedule Created
+
+4. Configure Report Parameters
+   • Date range selection
+   • Filter criteria
+   • Grouping options
+   • Sort order
+   • Output format (PDF/Excel/CSV)
+
+5. System Validate Parameters (BR-051)
+   • Check date range validity
+   • Validate filter values
+   • Ensure required fields selected
+
+6. DECISION: Validation Result
+   [IF] Parameters invalid
+      → Display error messages
+      → Administrator corrects parameters
+      → Return to Step 4
+   [ELSE] Parameters valid
+      → Continue to Step 7
+
+7. Estimate Dataset Size
+   • System calculates approximate record count
+
+8. DECISION: Processing Mode → Guard: BR-053
+   [IF] Large dataset (> 10,000 records)
+      → Offer background processing
+      → If Administrator accepts:
+         • Queue report for background generation
+         • Provide job tracking ID
+         • System processes asynchronously
+         • Email report when complete
+         • END: Report Queued
+      → If Administrator declines:
+         • Suggest reducing date range
+         • Return to Step 4
+   [ELSE] Standard dataset
+      → Continue to Step 9
+
+9. Generate Report
+   • System queries database with optimized query
+   • Applies filters and calculations
+   • Formats data per specifications (BR-051)
+   • Includes metadata and timestamps
+   • Completes within 60 seconds (BR-053)
+
+10. Apply Security Measures (BR-054)
+    • Add watermarks if sensitive
+    • Apply password protection if required
+    • Log report generation activity
+
+11. Present Report
+    • Display report preview
+    • Show report metadata
+
+12. Administrator Reviews Report
+    • Verify data accuracy
+    • Check formatting
+
+13. DECISION: Report Acceptable?
+    [IF] Needs modification
+       → Return to Step 4 to adjust parameters
+    [ELSE] Report acceptable
+       → Continue to Step 14
+
+14. Download/Distribute Report
+    • Administrator downloads file
+    • Or emails to recipients
+    • Or prints hard copy
+
+15. System Log Completion
+    • Record report generation details
+    • Update usage statistics
+
+16. END: Report Delivered
+Related Business Rules:
+BR-049, BR-050, BR-051, BR-052, BR-053, BR-054
+ 
+WF-006: VIP Visitor Management Workflow
+Description:
+Workflow for adding, managing, and handling VIP visitors with special privileges.
+Actors Involved:
+Administrator, Security Personnel
+Trigger:
+VIP designation request or VIP visitor arrival
+Workflow Steps:
+1. START: VIP Management Request
+
+2. UC-012: Manage VIP Permission
+   • Administrator accesses VIP management module
+
+3. DECISION: Action Type
+
+   [CASE] Add New VIP
+      → Continue to Step 4
+
+   [CASE] Modify VIP Permissions
+      → Continue to Step 8
+
+   [CASE] Review VIP Access
+      → Continue to Step 10
+
+   [CASE] Remove VIP Status
+      → Continue to Step 12
+
+4. Enter VIP Details (BR-061)
+   • Name and designation
+   • Organization/affiliation
+   • VIP level/category
+   • Contact person
+   • Justification for VIP status
+
+5. Configure Access Privileges (BR-063)
+   • Priority entry/exit
+   • Extended pass validity
+   • Authorized areas (including restricted)
+   • Security check waivers
+   • Special requirements
+
+6. Setup Pre-registration (BR-062)
+   • Advance entry approval
+   • Recurring visit authorization
+   • Escort assignment if needed
+   • Parking reservation
+
+7. Configure Notifications (BR-065)
+   • Designated personnel to alert
+   • Department heads to notify
+   • Notification method (email/SMS/app)
+   • System saves VIP record
+   • Apply data privacy protections (BR-067)
+   → END: VIP Added
+
+8. Modify Existing VIP (Step 3 - Modify branch)
+   • Administrator selects VIP record
+   • System displays current permissions (BR-063)
+   • Administrator modifies privileges
+   • Administrator provides modification reason
+   • System validates changes
+   • System logs modification
+   • System notifies relevant personnel
+   → END: VIP Updated
+
+10. Quarterly Review Process (Step 3 - Review branch) → Guard: BR-066
+    • System lists VIPs due for review
+    • For each VIP:
+       - Validate continued need for VIP status
+       - Review access patterns and usage
+       - Check for any security incidents
+       - Update expiry dates if renewed
+    • Administrator documents review
+    • Administrator renews or expires status
+    → END: Review Completed
+
+12. Remove VIP Status (Step 3 - Remove branch)
+    • Administrator selects remove option
+    • Administrator provides removal reason
+    • System confirms removal action
+    • System revokes special privileges
+    • System notifies relevant parties
+    • Visitor reverts to standard processing
+    → END: VIP Status Removed
+VIP Arrival Sub-Workflow:
+When a VIP visitor arrives at facility:
+
+14. VIP Arrival Detected
+    • Security Personnel registers visitor
+    • System identifies VIP status
+
+15. Trigger VIP Protocol (BR-065)
+    • System alerts designated personnel
+    • System notifies department heads
+    • System displays VIP status to Security Personnel
+    • System applies expedited processing
+
+16. Issue VIP Pass (BR-021)
+    • System uses VIP pass template
+    • Includes extended validity
+    • Grants additional access permissions
+    • No host confirmation required
+
+17. Optional Escort Assignment
+    • If configured, assign escort
+    • Brief escort on VIP requirements
+
+18. Complete VIP Entry
+    • Record entry with VIP flag
+    • System logs VIP visit details
+    • Monitor VIP movement discretely
+Related Business Rules:
+BR-021, BR-061, BR-062, BR-063, BR-064, BR-065, BR-066, BR-067
+ 
+WF-007: Security Personnel Account Management
+Description:
+Workflow for managing security personnel user accounts, roles, and permissions.
+Actors Involved:
+Administrator
+Trigger:
+New hire, role change, training completion, or account maintenance
+Workflow Steps:
+1. START: Personnel Management Action
+
+2. UC-011: Manage Security Personnel
+   • Administrator accesses user management
+
+3. DECISION: Action Type
+
+   [CASE] Create New Account
+      → Continue to Step 4
+
+   [CASE] Modify Account
+      → Continue to Step 8
+
+   [CASE] Monitor Activity
+      → Continue to Step 11
+
+   [CASE] Manage Training
+      → Continue to Step 13
+
+4. Create New Account (Step 3 - Create branch) → Guard: BR-055
+   • Administrator enters personnel details (BR-057):
+      - Full name and employee ID
+      - Contact information
+      - Assigned shift and location
+      - Emergency contact details
+
+5. Assign Role and Permissions (BR-056)
+   • Security Personnel - operational functions only
+   • Security Supervisor - operational + monitoring + incidents
+   • Administrator - full system access
+   • System validates role assignment
+
+6. Configure Account Settings
+   • Set password policy requirements
+   • Enable multi-factor authentication
+   • Set account expiry date (if temporary)
+   • Configure access hours
+
+7. Generate Credentials and Notify
+   • System generates username
+   • System creates temporary password
+   • System sends credentials securely
+   • System logs account creation (BR-060)
+   • System flags for initial training (BR-059)
+   → END: Account Created
+
+8. Modify Existing Account (Step 3 - Modify branch)
+   • Administrator selects personnel record
+
+9. DECISION: Modification Type
+
+   [CASE] Role Change
+      → Update role and permissions (BR-056)
+      → Validate new role assignment
+      → Log role change (BR-060)
+      → Notify personnel of new access
+      → END: Role Updated
+
+   [CASE] Disable Account
+      → Administrator provides reason
+      → System confirms action
+      → System disables account immediately
+      → Terminate active sessions
+      → Log action with reason (BR-060)
+      → END: Account Disabled
+
+   [CASE] Reset Password
+      → System generates temporary password
+      → Force password change on next login
+      → Notify personnel via email
+      → Log password reset (BR-060)
+      → END: Password Reset
+
+   [CASE] Update Information
+      → Administrator updates fields (BR-057)
+      → System validates changes
+      → System logs modifications (BR-060)
+      → END: Information Updated
+
+11. Monitor Personnel Activity (Step 3 - Monitor branch) → Guard: BR-058
+    • System displays activity dashboard
+    • Administrator reviews:
+       - Login/logout patterns
+       - Tasks completed
+       - Visitors processed
+       - Incidents handled
+       - System access patterns
+       - Performance metrics
+    • Administrator may export activity report
+    → END: Activity Reviewed
+
+13. Manage Training Records (Step 3 - Training branch) → Guard: BR-059
+    • System shows training status for all personnel
+    • For each personnel:
+       - Initial training status
+       - Annual refresher status
+       - Certification expiry dates
+       - Pending training requirements
+    • Administrator records training completion
+    • System updates certifications
+    • System unlocks accounts if training was overdue
+    • System sends acknowledgment to personnel
+    → END: Training Updated
+Related Business Rules:
+BR-055, BR-056, BR-057, BR-058, BR-059, BR-060
+ 
+WF-008: Visitor Records Access and Management
+Description:
+Workflow for accessing, searching, viewing, and maintaining visitor records.
+Actors Involved:
+Administrator
+Trigger:
+Need to access historical visitor data for reporting, auditing, or investigation
+Workflow Steps:
+1. START: Records Access Request
+
+2. UC-009: View Visitor Records
+   • Administrator accesses visitor records module
+   • System logs access attempt (BR-047)
+
+3. Define Search Criteria (BR-045)
+   • Visitor name or ID number
+   • Date range
+   • Host name
+   • Purpose of visit
+   • Pass number
+   • Blacklist status
+   • Any combination of above
+
+4. System Execute Search
+   • Query database with optimization
+   • Apply data privacy filters (BR-047)
+
+5. DECISION: Results Found?
+   [IF] No matching records
+      → Display "No matching records"
+      → Suggest broadening criteria
+      → Return to Step 3
+   [ELSE] Records found
+      → Continue to Step 6
+
+6. Display Search Results (BR-044)
+   • Show matching records list
+   • Display key information summary
+   • Provide sorting and filtering options
+
+7. Administrator Selects Record
+   • Click on specific visitor record
+
+8. Display Complete Record (BR-044)
+   • Visitor personal information
+   • All historical visits with dates
+   • Detailed entry/exit logs
+   • Associated incident reports
+   • Pass issuance history
+   • Blacklist status and reasons (if applicable)
+   • Denial records and appeals
+   • Biometric data (if applicable)
+   • Host relationships
+
+9. DECISION: Action Required?
+
+   [CASE] View Only
+      → Administrator reviews information
+      → END: Record Reviewed
+
+   [CASE] Add Notes/Comments → Guard: BR-046
+      → Administrator adds notes
+      → System timestamps and attributes to admin
+      → System logs addition (BR-046)
+      → END: Notes Added
+
+   [CASE] Correct Data Entry Error → Guard: BR-046
+      → Administrator selects edit option
+      → System allows editing specific fields only
+      → Administrator makes corrections
+      → Administrator provides reason for change
+      → System validates changes
+      → System creates audit trail entry (BR-046):
+         • Original value
+         • New value
+         • Timestamp
+         • Administrator ID
+         • Reason provided
+      → System saves changes
+      → END: Record Corrected
+
+   [CASE] Export Record → Guard: BR-047
+      → Administrator selects export
+      → Administrator chooses format (PDF/Excel/CSV)
+      → System applies data privacy rules
+      → System masks sensitive fields if needed
+      → System generates export file
+      → System logs export action (BR-047)
+      → Administrator downloads file
+      → END: Record Exported
+
+   [CASE] Change Blacklist Status → Guard: BR-046
+      → Administrator navigates to blacklist section
+      → Administrator adds or removes from blacklist
+      → Administrator provides detailed justification
+      → System requires additional approval (if adding)
+      → System logs blacklist change with audit trail
+      → System notifies Security Supervisor
+      → END: Blacklist Updated
+Data Retention Handling:
+System applies retention rules automatically (BR-048):
+• Active records (< 90 days): Full access
+• Archived records (91 days - 3 years): Read-only
+• Old records (> 3 years): Anonymized or deleted
+• Incident-related: Retained indefinitely
+Related Business Rules:
+BR-044, BR-045, BR-046, BR-047, BR-048
+ 
+Workflow Diagram Legend
+Workflow Notation:
+• START: Entry point of workflow
+• END: Termination point of workflow
+• UC-XXX: Use Case execution
+• DECISION: Branching point based on conditions
+• [IF/ELSE]: Conditional branches
+• [CASE]: Multiple option branches
+• Guard: BR-XXX: Business rule that governs the transition
+• →: Flow direction
+
+Version History:
+
+Version	Date	Author	Description
+1.0	Jan 2025	System Analyst	Initial version with 10 workflows
+2.0	Feb 2026	System Analyst	Complete revision with 8 detailed workflows based on new use case diagram
+

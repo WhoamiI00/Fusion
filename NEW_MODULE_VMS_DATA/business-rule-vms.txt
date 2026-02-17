@@ -1,0 +1,209 @@
+Visitor Management System (VMS)
+Business Rules Document
+
+Document Version: 2.0
+Last Updated: February 4, 2026
+Based on: VMS Use Case Diagram v2.0
+
+ 
+Table of Contents
+1. Introduction
+2. Security Personnel Business Rules
+3. Security Supervisor Business Rules
+4. Administrator Business Rules
+5. System-wide Business Rules
+ 
+1. Introduction
+This document defines the business rules for the Visitor Management System (VMS). These rules govern the behavior of the system and ensure consistent, secure, and efficient visitor management operations. The rules are organized by actor role and functional area.
+
+2. Security Personnel Business Rules
+Security Personnel are responsible for front-line visitor management, including registration, verification, pass issuance, and entry/exit recording.
+
+2.1 Register Visitor
+VMS-BR-001: Mandatory Information Collection
+Security personnel MUST collect the following mandatory information during visitor registration: Full Name, Valid Government-issued ID number, Contact phone number, Purpose of visit, Host employee name and department, Expected visit duration. Registration cannot proceed without all mandatory fields.
+VMS-BR-002: ID Document Validation
+All visitor identification documents MUST be valid government-issued IDs (Passport, National ID, Driver's License, or Aadhaar Card). Expired IDs or non-government documents are not acceptable. The system must verify ID format and expiration date.
+VMS-BR-003: Unique Visitor Identification
+Each visitor is uniquely identified by their ID document number. If a visitor with the same ID number exists in the system, their previous record is retrieved and updated. Duplicate entries for the same ID are prohibited.
+VMS-BR-004: Visitor Photo Capture
+A photograph of the visitor MUST be captured during registration. The photo should clearly show the visitor's face and will be printed on the visitor pass. Photos must meet minimum resolution requirements (640x480 pixels).
+VMS-BR-005: Blacklist Check Enforcement
+Before completing registration, the system MUST automatically check if the visitor is on the blacklist. If a match is found, registration must be blocked immediately and Security Supervisor notified.
+VMS-BR-006: Registration Time Stamp
+Every visitor registration MUST record the exact date and time of registration. This timestamp is used for audit trails and pass validity calculation.
+2.2 Verify Visitor ID
+VMS-BR-007: ID Verification Process
+Security personnel MUST physically verify the visitor's ID document against the information recorded in the system. Verification includes checking: Photo match with the visitor, ID number match, ID validity and authenticity, No signs of tampering or forgery.
+VMS-BR-008: Biometric Verification Option
+If biometric systems are enabled, Security personnel MAY use fingerprint or facial recognition to verify visitor identity. Biometric verification provides additional security but is not mandatory unless specified by policy.
+VMS-BR-009: Failed Verification Protocol
+If ID verification fails, Security personnel MUST: Deny entry immediately, Record the failed verification attempt, Escalate to Security Supervisor, Retain the visitor at reception until resolution.
+VMS-BR-010: Verification Documentation
+All verification attempts (successful or failed) MUST be logged with: Verifier name, Date and time, Verification method used, Result (pass/fail), Any anomalies observed.
+2.3 Deny Entry
+VMS-BR-011: Entry Denial Criteria
+Security personnel MUST deny entry under the following conditions: Visitor is on the blacklist, ID verification fails, Incomplete or invalid documentation, Host confirmation not received, Visit request outside approved time windows, Visitor behavior raises security concerns.
+VMS-BR-012: Denial Documentation
+Every entry denial MUST be documented with: Reason for denial (from predefined list), Date and time of denial, Denying personnel name, Visitor information, Any additional remarks or observations.
+VMS-BR-013: Visitor Notification
+When entry is denied, Security personnel MUST: Clearly explain the reason for denial to the visitor, Provide information on how to resolve the issue (if applicable), Maintain professional and courteous demeanor, Ensure the visitor leaves the premises.
+VMS-BR-014: Supervisor Escalation on Denial
+For certain denial reasons (blacklisted visitor, security concerns, or visitor disputes the denial), Security personnel MUST immediately notify the Security Supervisor for review and further action.
+VMS-BR-015: Denial Appeal Process
+If a visitor wishes to appeal a denial decision, Security personnel MUST: Record the appeal request, Escalate to Security Supervisor or Administrator, Allow the visitor to wait in a designated area, Provide expected resolution time frame.
+2.4 Issue Visitor Pass
+VMS-BR-016: Pass Issuance Prerequisites
+A visitor pass can ONLY be issued after: Successful registration, ID verification completed and passed, Host confirmation received (if required), Blacklist check cleared, All mandatory documents collected.
+VMS-BR-017: Pass Content Requirements
+Every visitor pass MUST contain: Unique pass number (auto-generated), Visitor name and photo, Valid from and valid until date/time, Authorized areas/zones, Host name and department, QR code or barcode for scanning, Emergency contact number.
+VMS-BR-018: Pass Validity Duration
+Visitor pass validity is determined by: Purpose of visit (default: same day), Host approval duration, Maximum allowed duration per visitor category, Building access hours. The system MUST not issue passes valid beyond the current day without explicit approval.
+VMS-BR-019: Pass Physical Security
+Visitor passes MUST include security features: Holographic overlay or watermark, Color-coded by visitor type, Tamper-evident materials, Sequential numbering. Passes should be difficult to duplicate or forge.
+VMS-BR-020: Pass Handover Protocol
+When issuing a pass, Security personnel MUST: Explain pass validity and authorized areas, Instruct visitor to wear pass visibly at all times, Explain return procedure upon exit, Record pass number and issuance time, Have visitor acknowledge receipt.
+VMS-BR-021: Temporary Pass for VIPs
+VIP visitors MAY receive special passes with: Extended validity, Access to restricted areas, No host confirmation required, Priority processing. VIP status must be pre-approved by Administrator.
+2.5 Record Entry
+VMS-BR-022: Entry Recording Mandatory
+Every visitor entry MUST be recorded in the system with: Entry date and time, Pass number used, Entry gate/checkpoint name, Recording personnel name, Any items carried by visitor.
+VMS-BR-023: Pass Scanning at Entry
+Security personnel MUST scan the visitor pass (QR/barcode) at entry point. The system must: Validate pass authenticity, Check pass validity status, Verify authorized entry point, Confirm visitor not already inside, Update entry timestamp.
+VMS-BR-024: Entry Without Valid Pass
+If a visitor attempts entry without a valid pass or with an invalid/expired pass, Security personnel MUST: Deny entry immediately, Direct visitor to registration desk, Record the attempted unauthorized entry, Alert Security Supervisor if the visitor insists.
+VMS-BR-025: Multiple Entry Prevention
+The system MUST prevent recording multiple simultaneous entries for the same pass. If a pass is already marked as "inside", entry should be denied and Security Supervisor alerted for investigation.
+VMS-BR-026: Items Declaration
+For high-security areas, visitors MUST declare any electronic devices, bags, or restricted items. Security personnel must record these items and may store them if facility policy requires.
+2.6 Record Exit
+VMS-BR-027: Exit Recording Mandatory
+Every visitor exit MUST be recorded with: Exit date and time, Pass number, Exit gate/checkpoint, Recording personnel name, Pass return confirmation.
+VMS-BR-028: Pass Return Requirement
+Visitors MUST return their physical pass upon exit. Security personnel must: Verify pass matches the visitor, Scan pass to record exit, Mark pass as returned in system, Physically collect and store the pass, Clear visitor status from "inside" to "exited".
+VMS-BR-029: Exit Without Pass
+If a visitor claims to have lost their pass, Security personnel MUST: Verify visitor identity using ID, Check system for valid entry record, Record pass as lost, Charge lost pass fee (if applicable), Flag the pass as invalid in system, Allow exit after verification.
+VMS-BR-030: Overstay Detection
+When recording exit, the system MUST calculate time spent inside. If visitor exceeded approved duration, Security personnel must: Note the overstay in system, Request explanation from visitor, Report to Security Supervisor if overstay exceeds threshold (e.g., 2 hours).
+VMS-BR-031: Items Return Verification
+If items were deposited at entry, Security personnel MUST: Verify all items are returned to visitor, Match items against entry record, Have visitor confirm receipt, Update item custody log.
+VMS-BR-032: Unclosed Visits
+The system must generate alerts for visitors who entered but have not exited after: End of business hours, Pass expiry time + 1 hour grace period, 8 hours from entry (for day passes). Security personnel must investigate and manually close visits if necessary.
+ 
+3. Security Supervisor Business Rules
+Security Supervisors oversee security operations, monitor visitor movements, handle security issues, and manage escalated situations.
+
+3.1 Monitor Visitor Movement
+VMS-BR-033: Real-time Monitoring Dashboard
+Security Supervisors MUST have access to a real-time dashboard showing: All active visitors currently inside, Their location (if tracking enabled), Entry/exit activity logs, Alerts and anomalies, Overstay notifications, Unauthorized area access attempts.
+VMS-BR-034: Movement Tracking Activation
+For high-security scenarios or special events, Security Supervisors MAY activate enhanced visitor tracking requiring: Regular checkpoint scans, Zone-based location updates, Escort assignments, Real-time movement paths on facility map.
+VMS-BR-035: Authorized Area Enforcement
+Security Supervisors must ensure visitors remain in authorized areas. If a visitor is detected in an unauthorized zone: System alerts Security Supervisor immediately, Camera feeds are reviewed, Security personnel dispatched to the location, Incident report automatically created.
+VMS-BR-036: Visitor Density Monitoring
+Security Supervisors MUST monitor visitor density in different areas to: Prevent overcrowding, Ensure emergency evacuation capacity, Identify unusual congregation patterns, Optimize security personnel deployment.
+VMS-BR-037: Pattern Analysis
+The system MUST provide pattern analysis tools for Security Supervisors to: Identify frequent visitors, Detect suspicious behavior patterns, Analyze visit durations and timings, Generate movement heatmaps, Flag anomalous activities for investigation.
+3.2 Handle Security Issues
+VMS-BR-038: Security Issue Classification
+All security issues MUST be classified by severity: Critical (immediate threat to safety), High (significant security breach), Medium (policy violation), Low (procedural non-compliance). Classification determines response time and escalation path.
+VMS-BR-039: Immediate Response Protocol
+For Critical security issues, Security Supervisors MUST: Initiate immediate lockdown if needed, Alert all security personnel, Contact emergency services if required, Activate crisis management team, Document all actions taken in real-time.
+VMS-BR-040: Visitor Restriction/Removal
+Security Supervisors have authority to: Restrict visitor movement to designated areas, Revoke pass and demand immediate exit, Add visitor to temporary watch list, Involve law enforcement if necessary. All actions must be documented with justification.
+VMS-BR-041: Incident Documentation
+For every security issue, Security Supervisors MUST create incident report containing: Issue type and severity, Date/time of occurrence, Involved parties (visitors, staff), Actions taken and their outcomes, Evidence collected (photos, videos, logs), Follow-up actions required, Resolution status.
+VMS-BR-042: Communication Protocol
+Security Supervisors MUST follow communication protocols: Notify management for High/Critical issues, Brief security personnel on active threats, Coordinate with facility management, Update VMS with real-time status, Maintain communication logs.
+VMS-BR-043: Evidence Preservation
+Security Supervisors must ensure: CCTV footage is preserved for incidents, Access logs are secured, Physical evidence is properly stored, Chain of custody maintained, Data backups created immediately for critical incidents.
+ 
+4. Administrator Business Rules
+Administrators have full system control and are responsible for configuration, reporting, user management, and VIP permission management.
+
+4.1 View Visitor Records
+VMS-BR-044: Complete Record Access
+Administrators have access to complete visitor records including: All historical visits, Entry/exit logs, Incident reports, Blacklist status, Host relationships, Biometric data (if applicable), Pass issuance history, Denied entry records.
+VMS-BR-045: Record Search Capabilities
+Administrators MUST be able to search records by: Visitor name, ID number, Date range, Host name, Purpose of visit, Pass number, Blacklist status, Any combination of above criteria.
+VMS-BR-046: Record Modification Restrictions
+Administrators can view but NOT modify historical records except: Adding notes/comments, Correcting data entry errors (with audit trail), Updating contact information, Changing blacklist status. All modifications must be logged with timestamp and administrator ID.
+VMS-BR-047: Data Privacy Compliance
+When viewing records, Administrators MUST comply with data privacy regulations: Access only for legitimate purposes, No unauthorized sharing of visitor information, Mask sensitive data when not needed (e.g., partial ID numbers), Log all record access for audit purposes.
+VMS-BR-048: Record Retention Policy
+Visitor records MUST be retained according to policy: Active records (last 90 days) - full access, Archived records (91 days to 3 years) - read-only, Old records (3+ years) - anonymized or deleted, Incident-related records - retained indefinitely. Administrators manage retention schedules.
+4.2 Generate Reports
+VMS-BR-049: Standard Report Types
+The system MUST support these standard reports: Daily visitor summary, Entry/exit logs, Overstay report, Blacklist activity, Security incidents, Host-wise visitor report, Peak hour analysis, Visitor frequency report, Denial statistics, Pass utilization.
+VMS-BR-050: Custom Report Builder
+Administrators MUST have access to custom report builder with: Drag-and-drop field selection, Date range filters, Multiple grouping options, Export formats (PDF, Excel, CSV), Scheduled report generation, Email distribution lists.
+VMS-BR-051: Report Data Accuracy
+All reports MUST: Use real-time data from database, Include data refresh timestamp, Show data collection period, Exclude incomplete/invalid records unless specified, Apply role-based data filtering, Include report generation metadata.
+VMS-BR-052: Report Scheduling
+Administrators can schedule reports to: Run daily, weekly, monthly, or custom intervals, Auto-email to distribution lists, Save to designated folders, Archive for compliance. Scheduled reports must include execution logs.
+VMS-BR-053: Report Performance Requirements
+Report generation MUST: Complete within 60 seconds for standard reports, Support background processing for large datasets, Provide progress indicators, Allow cancellation of long-running reports, Cache frequently accessed reports.
+VMS-BR-054: Report Security
+Reports containing sensitive information MUST: Require authentication to view, Support password protection for exports, Include watermarks on printed copies, Auto-delete after specified period (for temporary reports), Log all access and downloads.
+4.3 Manage Security Personnel
+VMS-BR-055: User Account Management
+Administrators MUST be able to: Create new user accounts, Assign roles (Security Personnel, Supervisor, Admin), Set access permissions, Enable/disable accounts, Reset passwords, Set account expiry dates, Manage multi-factor authentication.
+VMS-BR-056: Role-Based Access Control
+The system MUST enforce role-based permissions: Security Personnel - limited to operational functions, Security Supervisors - operational + monitoring + issue handling, Administrators - full system access. Roles cannot be self-assigned.
+VMS-BR-057: Personnel Information Management
+For each security personnel, Administrators must maintain: Full name and employee ID, Contact information, Assigned shift and location, Training certifications, Access level, Employment status, Emergency contact details.
+VMS-BR-058: Activity Monitoring
+Administrators MUST be able to monitor personnel activity: Login/logout times, Tasks performed, Visitors processed, Incidents handled, System access patterns, Performance metrics, Compliance with procedures.
+VMS-BR-059: Mandatory Training Requirements
+Security personnel accounts MUST: Have completed initial VMS training, Complete annual refresher training, Acknowledge policy updates, Pass competency assessments. System can lock accounts if training is overdue.
+VMS-BR-060: Audit Trail Requirements
+All personnel management actions MUST be logged: Account creation/deletion, Role changes, Permission modifications, Password resets, Training completions, Policy acknowledgments. Logs must be tamper-proof and retained per compliance requirements.
+4.4 Manage VIP Permission
+VMS-BR-061: VIP Designation Criteria
+Administrators can designate visitors as VIP based on: Executive/Board member status, Government officials, Important clients/partners, Special guests, Emergency situations. VIP designation must include justification and approval authority.
+VMS-BR-062: VIP Pre-registration
+VIPs can be pre-registered with: Advance entry approval, No host confirmation required, Express lane processing, Extended pass validity, Access to restricted areas, Special escort arrangements, Parking reservations.
+VMS-BR-063: VIP Access Privileges
+VIP passes include: Priority entry/exit, Multiple facility access, Extended validity (up to 1 month), Recurring visit authorization, Waiver of certain security checks (with risk assessment), Digital pass option (mobile app). Privileges must be documented and approved.
+VMS-BR-064: VIP List Management
+Administrators MUST maintain VIP list with: VIP name and designation, Organization/affiliation, VIP level/category, Authorized date range, Approved areas of access, Special requirements, Contact person, Review and renewal dates.
+VMS-BR-065: VIP Notification Protocol
+When VIP arrives, system MUST: Alert designated personnel, Notify relevant department heads, Display VIP status to Security personnel, Log VIP visit details, Track VIP movements (discrete), Send departure notification.
+VMS-BR-066: VIP Access Review
+Administrators MUST review VIP permissions: Quarterly for ongoing VIPs, Upon change in designation, After security incidents, When access patterns change. Reviews must be documented with approval signatures.
+VMS-BR-067: VIP Data Privacy
+VIP information is highly confidential and MUST: Have restricted access (Admin only), Not be visible in standard reports, Use encrypted storage, Require additional authentication to view, Follow special retention policies, Have separate audit trails.
+ 
+5. System-wide Business Rules
+These rules apply across all actors and functions within the VMS.
+
+5.1 Data Integrity and Security
+VMS-BR-068: Data Encryption
+All sensitive data MUST be encrypted: At rest (database encryption), In transit (TLS/SSL), Backup files, Biometric data, Personal identification information. Encryption keys must be managed securely.
+VMS-BR-069: Audit Logging
+The system MUST maintain comprehensive audit logs for: All user actions, Data modifications, Security events, System access, Report generation, Configuration changes, Failed login attempts, Blacklist modifications. Logs must be tamper-proof and retained for minimum 3 years.
+VMS-BR-070: Backup and Recovery
+System MUST perform: Daily incremental backups, Weekly full backups, Off-site backup storage, Backup verification tests (monthly), Disaster recovery drills (quarterly), Recovery time objective (RTO) < 4 hours, Recovery point objective (RPO) < 1 hour.
+VMS-BR-071: Session Management
+User sessions MUST: Timeout after 15 minutes of inactivity, Require re-authentication after timeout, Support only one active session per user, Terminate immediately upon logout, Invalidate after password change, Log all session events.
+5.2 System Performance
+VMS-BR-072: Response Time Requirements
+The system MUST meet these performance criteria: Visitor registration < 30 seconds, Pass scanning/validation < 2 seconds, Search queries < 5 seconds, Report generation < 60 seconds, Dashboard refresh < 3 seconds, Blacklist check < 1 second.
+VMS-BR-073: Availability Requirements
+The system MUST maintain: 99.5% uptime during business hours, Scheduled maintenance only during off-hours, Maximum 4 hours downtime per month, Graceful degradation for non-critical features, Offline capability for core functions (entry/exit recording).
+VMS-BR-074: Scalability Requirements
+The system MUST support: Minimum 50 concurrent users, 500 visitor registrations per day, 10,000 active passes, Database growth of 100GB per year, Peak load of 200% normal capacity.
+5.3 Integration and Interoperability
+VMS-BR-075: Integration Standards
+The system MUST support integration with: CCTV systems (video feeds), Access control systems (door locks), HR systems (employee database), Email systems (notifications), SMS gateways (alerts), Biometric devices (fingerprint/face scanners), Badge printers, Mobile apps.
+VMS-BR-076: API Requirements
+The system MUST provide RESTful APIs for: Visitor registration, Pass validation, Record queries, Report generation, Real-time notifications. APIs must use OAuth 2.0 authentication and rate limiting.
+VMS-BR-077: Data Export/Import
+The system MUST support: Export to Excel, CSV, PDF formats, Bulk data import from templates, Integration with external databases, Automated data synchronization, Data validation on import, Error handling and rollback.
+5.4 Compliance and Regulatory
+VMS-BR-078: Data Privacy Compliance
+The system MUST comply with: GDPR (if applicable), Local data protection laws, Industry-specific regulations, Consent management, Right to be forgotten, Data minimization principles, Privacy by design.
+VMS-BR-079: Regulatory Reporting
+The system MUST support: Government mandated visitor reporting, Security incident reporting to authorities, Audit trail generation for regulators, Compliance certificate generation, Legal hold on data when required.
+VMS-BR-080: Visitor Rights
+Visitors have the right to: Access their own data, Request data correction, Request data deletion (subject to legal hold), Opt-out of non-mandatory data collection, Receive data in portable format, File complaints. System must facilitate these rights.

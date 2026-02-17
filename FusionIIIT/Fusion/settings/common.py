@@ -144,6 +144,7 @@ INSTALLED_APPS = [
     'applications.inventory',
     'applications.iwdModuleV2',
     'applications.patent_system',
+    'applications.vms',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
