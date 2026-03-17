@@ -1,3 +1,8 @@
+import base64
+import io
+import json
+
+import pyqrcode
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -120,6 +125,27 @@ class VerifyVisitorView(APIView):
         return Response({"detail": "Verification successful.", "visit_status": visit.status})
 
 
+def _generate_pass_qr(visitor_pass, visit):
+    """Generate a PNG QR code as a base64 data-URI string."""
+    qr_payload = json.dumps({
+        "pass_number": visitor_pass.pass_number,
+        "visit_id": visit.id,
+        "visitor": visit.visitor.full_name,
+        "id_number": visit.visitor.id_number,
+        "host": visit.host_name,
+        "department": visit.host_department,
+        "zones": visitor_pass.authorized_zones,
+        "valid_from": visitor_pass.valid_from.isoformat(),
+        "valid_until": visitor_pass.valid_until.isoformat(),
+        "vip": visitor_pass.is_vip_pass,
+    })
+    qr = pyqrcode.create(qr_payload, error="M")
+    buffer = io.BytesIO()
+    qr.png(buffer, scale=6, quiet_zone=2)
+    b64 = base64.b64encode(buffer.getvalue()).decode()
+    return f"data:image/png;base64,{b64}"
+
+
 class IssuePassView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -143,10 +169,13 @@ class IssuePassView(APIView):
                 "valid_until": valid_until,
                 "authorized_zones": data.get("authorized_zones", "public"),
                 "status": VisitorPass.PASS_ISSUED,
-                "barcode_data": data.get("authorized_zones", "public"),
                 "is_vip_pass": visit.is_vip,
             },
         )
+
+        qr_data_uri = _generate_pass_qr(visitor_pass, visit)
+        visitor_pass.barcode_data = qr_data_uri
+        visitor_pass.save(update_fields=["barcode_data"])
 
         visit.status = Visit.STATUS_PASS_ISSUED
         visit.pass_issued_at = now
@@ -157,6 +186,7 @@ class IssuePassView(APIView):
                 "detail": "Pass issued",
                 "visit_status": visit.status,
                 "pass": VisitorPassSerializer(visitor_pass).data,
+                "qr_code": qr_data_uri,
             }
         )
 

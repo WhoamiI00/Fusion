@@ -106,7 +106,7 @@ class VisitorPass(models.Model):
     valid_until = models.DateTimeField()
     authorized_zones = models.CharField(max_length=200, default="public")
     status = models.CharField(max_length=20, choices=PASS_STATUS, default=PASS_PENDING)
-    barcode_data = models.CharField(max_length=128, blank=True)
+    barcode_data = models.TextField(blank=True)
     is_vip_pass = models.BooleanField(default=False)
 
     def __str__(self):
