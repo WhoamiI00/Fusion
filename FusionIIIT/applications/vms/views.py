@@ -20,6 +20,7 @@ from .models import (
 )
 from .serializers import (
     DenialLogSerializer,
+    DenyEntrySerializer,
     RegisterVisitorSerializer,
     RecordMovementSerializer,
     SecurityIncidentCreateSerializer,
@@ -251,8 +252,22 @@ class ActiveVisitorsView(APIView):
         return Response(VisitSerializer(active, many=True).data)
 
 
+class RecentVisitsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        limit = int(request.query_params.get("limit", 5))
+        recent = Visit.objects.order_by("-registered_at")[:limit]
+        return Response(VisitSerializer(recent, many=True).data)
+
+
 class SecurityIncidentView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        limit = int(request.query_params.get("limit", 20))
+        incidents = SecurityIncident.objects.order_by("-created_at")[:limit]
+        return Response(SecurityIncidentSerializer(incidents, many=True).data)
 
     def post(self, request):
         serializer = SecurityIncidentCreateSerializer(data=request.data)

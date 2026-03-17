@@ -20,10 +20,22 @@ class VisitorSerializer(serializers.ModelSerializer):
 
 class VisitSerializer(serializers.ModelSerializer):
     visitor = VisitorSerializer()
+    gate_name = serializers.SerializerMethodField()
+    authorized_zones = serializers.SerializerMethodField()
 
     class Meta:
         model = Visit
         fields = "__all__"
+
+    def get_gate_name(self, obj):
+        last_log = obj.movement_logs.order_by("-created_at").first()
+        return last_log.gate_name if last_log else ""
+
+    def get_authorized_zones(self, obj):
+        try:
+            return obj.visitor_pass.authorized_zones
+        except VisitorPass.DoesNotExist:
+            return ""
 
 
 class VisitorPassSerializer(serializers.ModelSerializer):

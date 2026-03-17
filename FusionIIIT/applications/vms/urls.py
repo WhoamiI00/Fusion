@@ -4,6 +4,7 @@ from .views import (
     ActiveVisitorsView,
     DenyEntryView,
     IssuePassView,
+    RecentVisitsView,
     RecordEntryView,
     RecordExitView,
     RegisterVisitorView,
@@ -21,5 +22,6 @@ urlpatterns = [
     path("exit/", RecordExitView.as_view(), name="record-exit"),
     path("deny/", DenyEntryView.as_view(), name="deny-entry"),
     path("active/", ActiveVisitorsView.as_view(), name="active"),
+    path("recent/", RecentVisitsView.as_view(), name="recent"),
     path("incidents/", SecurityIncidentView.as_view(), name="incidents"),
 ]
