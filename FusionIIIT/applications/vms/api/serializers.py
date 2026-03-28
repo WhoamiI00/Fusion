@@ -1,14 +1,28 @@
+from datetime import date
+
 from rest_framework import serializers
 
 from ..models import (
+    AccessZone,
+    BlacklistAuditLog,
     BlacklistEntry,
+    ConfigChangeLog,
+    DataOperationLog,
     DenialLog,
     EntryExitLog,
+    EscortAssignment,
+    HostAuthority,
+    RegistrationQuota,
     SecurityIncident,
+    SystemConfig,
+    VIPActivityLog,
     VerificationLog,
     Visit,
     Visitor,
+    VisitorLocation,
     VisitorPass,
+    VisitorRequest,
+    VisitingHours,
 )
 
 
@@ -114,3 +128,180 @@ class SecurityIncidentCreateSerializer(serializers.Serializer):
     severity = serializers.ChoiceField(choices=SecurityIncident.SEVERITIES)
     issue_type = serializers.ChoiceField(choices=SecurityIncident.ISSUE_TYPES)
     description = serializers.CharField()
+
+
+# ============================================================================
+# New serializers for missing BR / UC / WF coverage
+# ============================================================================
+
+# --- Pass scan (BR-019/020/021) ---
+class ScanPassSerializer(serializers.Serializer):
+    visit_id = serializers.IntegerField()
+    checkpoint_name = serializers.CharField()
+    zone_name = serializers.CharField(required=False, allow_blank=True)
+    items_declared = serializers.CharField(required=False, allow_blank=True)
+
+
+class ScanResultSerializer(serializers.Serializer):
+    valid = serializers.BooleanField()
+    pass_number = serializers.CharField()
+    visitor = serializers.CharField()
+    zones = serializers.CharField()
+    valid_until = serializers.CharField()
+
+
+# --- Manual verification (BR-023) ---
+class ManualVerificationSerializer(serializers.Serializer):
+    visit_id = serializers.IntegerField()
+    result = serializers.BooleanField(default=True)
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+
+# --- Blacklist management (BR-030–035) ---
+class BlacklistCreateSerializer(serializers.Serializer):
+    id_number = serializers.CharField()
+    reason = serializers.CharField()
+    evidence = serializers.CharField(required=False, allow_blank=True)
+
+
+class BlacklistEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlacklistEntry
+        fields = "__all__"
+
+
+class BlacklistAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlacklistAuditLog
+        fields = "__all__"
+
+
+# --- Visitor history (BR-030/031) ---
+class VisitorHistorySerializer(serializers.Serializer):
+    visitor = VisitorSerializer()
+    visits = VisitSerializer(many=True)
+    incidents = SecurityIncidentSerializer(many=True)
+    blacklist_entries = BlacklistEntrySerializer(many=True)
+
+
+# --- VIP processing (BR-041–047) ---
+class VIPProcessSerializer(serializers.Serializer):
+    visit_id = serializers.IntegerField()
+    bypass_approval = serializers.BooleanField(default=False)
+
+
+class EscortAssignSerializer(serializers.Serializer):
+    visit_id = serializers.IntegerField()
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class EscortAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EscortAssignment
+        fields = "__all__"
+
+
+class VIPActivityLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VIPActivityLog
+        fields = "__all__"
+
+
+# --- Report generation (BR-025–029) ---
+class ReportRequestSerializer(serializers.Serializer):
+    report_type = serializers.ChoiceField(
+        choices=["visitor_summary", "incident_summary", "access_log", "vip_report", "full_audit"]
+    )
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+
+
+# --- System config (BR-057–066) ---
+class SystemConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemConfig
+        fields = "__all__"
+
+
+class ConfigUpdateSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    value = serializers.CharField()
+    description = serializers.CharField(required=False, allow_blank=True)
+
+
+class ConfigChangeLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfigChangeLog
+        fields = "__all__"
+
+
+# --- Visiting hours (BR-063) ---
+class VisitingHoursSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitingHours
+        fields = "__all__"
+
+
+class VisitingHoursCreateSerializer(serializers.Serializer):
+    day_of_week = serializers.IntegerField(min_value=0, max_value=6)
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    is_holiday = serializers.BooleanField(default=False)
+    holiday_name = serializers.CharField(required=False, allow_blank=True)
+    active = serializers.BooleanField(default=True)
+
+
+# --- Access zones (BR-064) ---
+class AccessZoneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccessZone
+        fields = "__all__"
+
+
+class AccessZoneCreateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    requires_vip = serializers.BooleanField(default=False)
+    requires_escort = serializers.BooleanField(default=False)
+    is_restricted = serializers.BooleanField(default=False)
+    active = serializers.BooleanField(default=True)
+
+
+# --- Location tracking (BR-036–040) ---
+class VisitorLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitorLocation
+        fields = "__all__"
+
+
+# --- Data export/import (BR-067–074) ---
+class DataExportSerializer(serializers.Serializer):
+    format = serializers.ChoiceField(choices=["csv", "json", "xlsx"], default="csv")
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False)
+
+
+class DataImportSerializer(serializers.Serializer):
+    format = serializers.ChoiceField(choices=["csv", "json"], default="csv")
+    data_content = serializers.CharField()
+    field_mapping = serializers.DictField(child=serializers.CharField())
+
+
+class DataOperationLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataOperationLog
+        fields = "__all__"
+
+
+# --- Request ID (BR-005) ---
+class VisitorRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitorRequest
+        fields = "__all__"
+
+
+# --- Host authority (BR-011) ---
+class HostAuthoritySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostAuthority
+        fields = "__all__"
