@@ -3,7 +3,8 @@ import datetime
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.db import models
-from applications.globals.models import ExtraInfo
+from applications.globals.models import ExtraInfo, Designation, DepartmentInfo, HoldsDesignation, Staff, Faculty, Feedback, Issue_image_directory, IssueImage, Issue, ModuleAccess
+from applications.office_module.models import Project_Registration, Project_Extension, Project_Closure, Project_Reallocation
 
 class emp_visits(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
@@ -26,7 +27,7 @@ class emp_visits(models.Model):
 
 class emp_techtransfer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     details = models.CharField(max_length=500, default=" ")
     date_entry = models.DateField(null=True, blank=True, default=datetime.datetime.now)
     start_date = models.DateField(null=True,blank=True)
@@ -35,7 +36,7 @@ class emp_techtransfer(models.Model):
 
 class emp_session_chair(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     name = models.CharField(max_length=500, default=" ")
     event = models.TextField(max_length=2500, default=" ")
     YEAR_CHOICES = []
@@ -57,7 +58,7 @@ class emp_session_chair(models.Model):
 
 class emp_research_projects(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     ptype = models.CharField(max_length=100, default="Research")
     pi = models.CharField(max_length=1000, default=" ")
     co_pi = models.CharField(max_length=1500, default=" ")
@@ -82,7 +83,7 @@ class emp_research_projects(models.Model):
 
 class emp_research_papers(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     R_TYPE_CHOICES = (
         ('Journal', 'Journal'),
         ('Conference', 'Conference'),
@@ -133,7 +134,7 @@ class emp_research_papers(models.Model):
 
 class emp_published_books(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     PTYPE_TYPE_CHOICES = (
         ('Book', 'Book'),
         ('Monograph', 'Monograph'),
@@ -158,7 +159,7 @@ class emp_published_books(models.Model):
 
 class emp_patents(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     p_no = models.CharField(max_length=150)
     title = models.CharField(max_length=1500)
     earnings = models.IntegerField(default=0)
@@ -186,7 +187,7 @@ class emp_patents(models.Model):
 
 class emp_mtechphd_thesis(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     degree_type = models.IntegerField(default=1)
     title = models.CharField(max_length=250)
     supervisors = models.CharField(max_length=250)
@@ -219,7 +220,7 @@ class emp_mtechphd_thesis(models.Model):
 
 class emp_keynote_address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     KEYNOTE_TYPE_CHOICES = (
         ('Keynote', 'Keynote'),
         ('Plenary Address', 'Plenary Address'),
@@ -248,7 +249,7 @@ class emp_keynote_address(models.Model):
 
 class emp_expert_lectures(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     LECTURE_TYPE_CHOICES = (
         ('Expert Lecture', 'Expert Lecture'),
         ('Invited Talk', 'Invited Talk'),
@@ -273,7 +274,7 @@ class emp_expert_lectures(models.Model):
 
 class emp_event_organized(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     TYPE_CHOICES = (
         ('Training Program', 'Training Program'),
         ('Seminar', 'Seminar'),
@@ -301,7 +302,7 @@ class emp_event_organized(models.Model):
 
 class emp_consultancy_projects(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     consultants = models.CharField(max_length=150)
     title = models.CharField(max_length=1000)
     client = models.CharField(max_length=1000)
@@ -323,7 +324,7 @@ class emp_consultancy_projects(models.Model):
 
 class emp_confrence_organised(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     name = models.CharField(max_length=500)
     venue = models.CharField(max_length=500)
     YEAR_CHOICES = []
@@ -353,7 +354,7 @@ class emp_confrence_organised(models.Model):
 
 class emp_achievement(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True,null=True)
-    pf_no = models.IntegerField()
+    pf_no = models.CharField(max_length=20)
     A_TYPE_CHOICES = (
         ('Award', 'Award'),
         ('Honour', 'Honour'),
@@ -397,3 +398,65 @@ class faculty_about(models.Model):
 
     def __str__(self):
         return str(self.user)
+    
+class emp_administrative_position(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    pf_no = models.CharField(max_length=20)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'title')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+    
+class emp_honors(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    pf_no = models.CharField(max_length=20)
+    title = models.CharField(max_length=255)  # NOT NULL constraint
+    period = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'title')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+    
+class emp_professional_experience(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    pf_no = models.CharField(max_length=20)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    from_date = models.DateField(null=True, blank=True)
+    to_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'title')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+    
+class emp_qualifications(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    pf_no = models.CharField(max_length=20)
+    degree = models.CharField(max_length=255)
+    college = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'degree')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.degree} from {self.college}"

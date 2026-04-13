@@ -9,80 +9,126 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model=Doctor
         fields=('__all__')
-
-class ComplaintSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model=Complaint
-        fields=('__all__')
-
-class StockSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model=Stock
-        fields=('__all__')
-
-class MedicineSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model=Medicine
-        fields=('__all__')
-
-class HospitalSerializer(serializers.ModelSerializer):
+        
+class PathologistSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Hospital
+        model=Pathologist
         fields=('__all__')
+
+# class ComplaintSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model=Complaint
+#         fields=('__all__')
+
+# class StockSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model=Stock
+#         fields=('__all__')
+
+# class MedicineSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model=Medicine
+#         fields=('__all__')
+
+# class HospitalSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Hospital
+#         fields=('__all__')
 
  
-class ExpirySerializer(serializers.ModelSerializer):
+# class ExpirySerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Expiry
+#         fields=('__all__')
+
+class DoctorsScheduleSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Expiry
+        model=Doctors_Schedule
         fields=('__all__')
-
-class ScheduleSerializer(serializers.ModelSerializer):
+class PathologistScheduleSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Schedule
+        model=Pathologist_Schedule
         fields=('__all__')
-
-
-class CounterSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model=Counter
-        fields=('__all__')
-
-class AppointmentSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model=Appointment
-        fields=('__all__')
-
 
 class PrescriptionSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Prescription
+        model=All_Prescription
         fields=('__all__')
-
-
-class PrescribedMedicineSerializer(serializers.ModelSerializer):
+        
+class followupSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Prescribed_medicine
+        model=Prescription_followup
         fields=('__all__')
-
-
-class AmbulanceRequestSerializer(serializers.ModelSerializer):
+        
+class prescmedSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Ambulance_request
+        model=All_Prescribed_medicine
         fields=('__all__')
-
-class HospitalAdmitSerializer(serializers.ModelSerializer):
+class ComplaintSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model=Hospital_admit
+        model=Complaint
+        fields=('__all__')
+        
+class AnnouncementSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=Announcements
+        fields=['message']
+
+
+# class CounterSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Counter
+#         fields=('__all__')
+
+# class AppointmentSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Appointment
+#         fields=('__all__')
+
+
+# class PrescriptionSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Prescription
+#         fields=('__all__')
+
+
+# class PrescribedMedicineSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Prescribed_medicine
+#         fields=('__all__')
+
+
+# class AmbulanceRequestSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Ambulance_request
+#         fields=('__all__')
+
+# class HospitalAdmitSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model=Hospital_admit
+#         fields=('__all__')
+
+class MedicalReliefSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model=medical_relief
         fields=('__all__')

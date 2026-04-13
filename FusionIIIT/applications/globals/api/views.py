@@ -14,13 +14,25 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes,authentication_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from django.http import JsonResponse
 
 
 from . import serializers
-
+from applications.globals.models import (ExtraInfo, Feedback, HoldsDesignation,
+                                         Issue, IssueImage, DepartmentInfo, ModuleAccess)
 from .utils import get_and_authenticate_user
 from notifications.models import Notification
 
+from rest_framework.views import APIView
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+import logging
+
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 @api_view(['POST'])
@@ -30,10 +42,34 @@ def login(request):
     serializer.is_valid(raise_exception=True)
     user = get_and_authenticate_user(**serializer.validated_data)
     data = serializers.AuthUserSerializer(user).data
+    print(user.id)
+    desig = list(HoldsDesignation.objects.select_related('user','working','designation').all().filter(working = user).values_list('designation'))
+    print(desig)
+    b = [i for sub in desig for i in sub]
+    design = HoldsDesignation.objects.select_related('user','designation').filter(working=user)
+
+    designation=[]
+                
+                
+    if str(user.extrainfo.user_type) == "student":
+        designation.append(str(user.extrainfo.user_type))
+        
+    for i in design:
+        if str(i.designation) != str(user.extrainfo.user_type):
+            print('-------')
+            print(i.designation)
+            print(user.extrainfo.user_type)
+            print('')
+            designation.append(str(i.designation))
+    for i in designation:
+        print(i)
+
+    
     resp = {
         'success' : 'True',
         'message' : 'User logged in successfully',
-        'token' : data['auth_token']
+        'token' : data['auth_token'],
+        'designations':designation
     }
     return Response(data=resp, status=status.HTTP_200_OK)
 
@@ -46,13 +82,15 @@ def logout(request):
     return Response(data=resp, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@authentication_classes([TokenAuthentication])
-def dashboard(request):
+@permission_classes([AllowAny])
+def auth_view(request):
     user=request.user
-
     name = request.user.first_name +"_"+ request.user.last_name
+    roll_no = request.user.username
 
+    extra_info = get_object_or_404(ExtraInfo, user=user)
+    last_selected_role = extra_info.last_selected_role
+    
     designation_list = list(HoldsDesignation.objects.all().filter(working = request.user).values_list('designation'))
     designation_id = [designation for designations in designation_list for designation in designations]
     designation_info = []
@@ -60,25 +98,76 @@ def dashboard(request):
         name_ = get_object_or_404(Designation, id = id)
         designation_info.append(str(name_.name))
 
+    print(designation_info)
+    accessible_modules = {}
+    
+    for designation in designation_info:
+        module_access = ModuleAccess.objects.filter(designation__iexact=designation).first()
+        if module_access:
+            filtered_modules = {}
+
+            field_names = [field.name for field in ModuleAccess._meta.get_fields() if field.name not in ['id', 'designation']]
+
+            for field_name in field_names:
+                filtered_modules[field_name] = getattr(module_access, field_name)
+            
+            accessible_modules[designation] = filtered_modules
+            
+    resp={
+        'designation_info' : designation_info,
+        'name': name,
+        'roll_no': roll_no,
+        'accessible_modules': accessible_modules,
+        'last_selected_role': last_selected_role
+    }
+    
+    return Response(data=resp,status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def notification(request):
     notifications=serializers.NotificationSerializer(request.user.notifications.all(),many=True).data
-    club_details= coordinator_club(request)
 
     resp={
-        'notifications':notifications,
-        'desgination_info' :  designation_info,
-        'club_details' : club_details
+        'notifications':notifications, 
     }
 
     return Response(data=resp,status=status.HTTP_200_OK)
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_last_selected_role(request):
+    new_role = request.data.get('last_selected_role')
+
+    if new_role is None:
+        return Response({'error': 'last_selected_role is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    extra_info = get_object_or_404(ExtraInfo, user=request.user)
+
+    extra_info.last_selected_role = new_role
+    extra_info.save()
+
+    return Response({'message': 'last_selected_role updated successfully'}, status=status.HTTP_200_OK)
+
+# This API is only for student profile. For faculty profile, use eis_profile views
 @api_view(['GET'])
 def profile(request, username=None):
     user = get_object_or_404(User, username=username) if username else request.user
-    user_detail = serializers.UserSerializer(user).data
     profile = serializers.ExtraInfoSerializer(user.extrainfo).data
+    
     if profile['user_type'] == 'student':
         student = user.extrainfo.student
-        skills = serializers.HasSerializer(student.has_set.all(),many=True).data
+        std_sem = Student.objects.get(id=student.id).curr_semester_no
+        skills = list(
+        Has.objects.filter(unique_id_id=student)
+        .select_related("skill_id")
+        .values("skill_id__skill", "skill_rating")
+        )
+        formatted_skills = [
+            {"skill_name": skill["skill_id__skill"], "skill_rating": skill["skill_rating"]}
+            for skill in skills
+        ]
         education = serializers.EducationSerializer(student.education_set.all(), many=True).data
         course = serializers.CourseSerializer(student.course_set.all(), many=True).data
         experience = serializers.ExperienceSerializer(student.experience_set.all(), many=True).data
@@ -88,9 +177,9 @@ def profile(request, username=None):
         patent = serializers.PatentSerializer(student.patent_set.all(), many=True).data
         current = serializers.HoldsDesignationSerializer(user.current_designation.all(), many=True).data
         resp = {
-            'user' : user_detail,
             'profile' : profile,
-            'skills' : skills,
+            'semester_no' : std_sem,
+            'skills' : formatted_skills,
             'education' : education,
             'course' : course,
             'experience' : experience,
@@ -101,8 +190,8 @@ def profile(request, username=None):
             'current' : current
         }
         return Response(data=resp, status=status.HTTP_200_OK)
-    elif profile['user_type'] == 'faculty':
-        return redirect('/eis/api/profile/' + (username+'/' if username else ''))
+    else:
+        return Response(data={'error': 'User is not a student'}, status=status.HTTP_400_BAD_REQUEST)  
 
 @api_view(['PUT'])
 def profile_update(request):
@@ -126,11 +215,26 @@ def profile_update(request):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         elif 'skillsubmit' in request.data:
-            serializer = serializers.HasSerializer(data=request.data['skillsubmit'])
-            if serializer.is_valid():
-                serializer.save(unique_id=student)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                skill_data = request.data['skillsubmit']
+                skill_id = skill_data['skill_id']
+                skill_name = skill_id['skill_name']
+                skill_rating = skill_data['skill_rating']
+
+                if not skill_name or skill_rating is None:
+                    return Response({"error": "Missing skill_name or skill_rating"}, status=status.HTTP_400_BAD_REQUEST)
+
+                skill, created = Skill.objects.get_or_create(skill=skill_name)
+                has_obj, created = Has.objects.get_or_create(skill_id=skill, unique_id=student, defaults={"skill_rating": skill_rating})
+                if not created:
+                    has_obj.skill_rating = skill_rating
+                    has_obj.save()
+
+                return Response({"message": "Skill added successfully"}, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         elif 'achievementsubmit' in request.data:
             request.data['achievementsubmit']['unique_id'] = profile
             serializer = serializers.AchievementSerializer(data=request.data['achievementsubmit'])
@@ -256,3 +360,191 @@ def NotificationRead(request):
             'error':'Failed, notification is not marked as seen.'
         }
         return Response(response,status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def NotificationUnread(request):
+    try:
+        notifId = int(request.data['id'])
+        user = request.user
+        notification = get_object_or_404(Notification, recipient=user, id=notifId)
+        if not notification.unread:  
+            notification.unread = True
+            notification.save() 
+        response = {
+            'message': 'Notification successfully marked as unread.'
+        }
+        return Response(response, status=status.HTTP_200_OK)
+    except:
+        response = {
+            'error': 'Failed to mark the notification as unread.'
+        }
+        return Response(response, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['POST']) 
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def delete_notification(request):
+    try:
+        notifId = int(request.data['id'])  
+        notification = get_object_or_404(Notification, recipient=request.user, id=notifId)
+        
+        notification.deleted = True
+        notification.save()
+        
+        response = {
+            'message': 'Notification marked as deleted.'
+        }
+        return Response(response, status=status.HTTP_200_OK)
+    except Exception as e:
+        response = {
+            'error': 'Failed to mark the notification as deleted.',
+            'details': str(e)
+        }
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    
+
+def search_users(request):
+    query = request.GET.get('q', '')
+    if query:
+        users = ExtraInfo.objects.filter(user__username__icontains=query).values('id', 'user__username')
+    else:
+        users = ExtraInfo.objects.none()
+
+    results = [
+        {'id': user['id'], 'text': user['user__username']} for user in users
+    ]
+    return JsonResponse({'results': results})
+
+@api_view(['GET'])  # Declare that this view handles GET requests
+@permission_classes([])  # No permissions required
+@authentication_classes([])  # No authentication required
+def department_info(request):
+    """
+    Retrieve department information and return as JSON.
+    """
+    try:
+        departments = DepartmentInfo.objects.all()  # Fetch all department objects
+        serializer = serializers.DepartmentInfoSerializer(departments, many=True)  # Serialize the data
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data as JSON
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_view(request):
+    """
+    API endpoint to request a password reset email
+    """
+    email = request.data.get('email')
+    if not email:
+        return Response(
+            {"error": "Email is required"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        user = User.objects.filter(email__iexact=email).first()
+        
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        reset_url = f"{settings.FRONTEND_URL}/reset-password-confirm/{uid}/{token}/"
+        
+        context = {
+            'user': user,
+            'reset_url': reset_url,
+            'site_name': getattr(settings, 'SITE_NAME', 'Fusion'),
+        }
+        
+        subject = "Password Reset Request"
+        message = f"""
+        Hello {user.username},
+
+        You requested a password reset for your Fusion account.
+
+        Please go to the following link to set a new password:
+        {reset_url}
+
+        If you didn't request this, you can ignore this email.
+
+        Thanks,
+        The Fusion Team
+                """
+        
+        # Send email
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False
+            )
+            logger.info(f"Password reset email sent to {email}")
+        except Exception as e:
+            logger.error(f"Failed to send password reset email: {str(e)}")
+            return Response(
+                {"error": "Failed to send email. Please try again later."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(
+            {"message": "Password reset email has been sent."}, 
+            status=status.HTTP_200_OK
+        )
+        
+    except User.DoesNotExist:
+        logger.warning(f"Password reset attempt for non-existent email: {email}")
+        return Response(
+            {"error": "User with this email does not exist."}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm_view(request):
+    """
+    API endpoint to confirm password reset and set new password
+    """
+    uid = request.data.get('uid')
+    token = request.data.get('token')
+    new_password = request.data.get('new_password')
+    
+    if not (uid and token and new_password):
+        return Response(
+            {"error": "UID, token and new password are required"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    try:
+        # Decode the user ID
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id)
+        
+        # Verify the token
+        if default_token_generator.check_token(user, token):
+            # Set new password
+            user.set_password(new_password)
+            user.save()
+            
+            logger.info(f"Password reset successful for user {user.username}")
+            
+            return Response(
+                {"message": "Password has been reset successfully."}, 
+                status=status.HTTP_200_OK
+            )
+        else:
+            logger.warning(f"Invalid token used for password reset for user {user.username}")
+            return Response(
+                {"error": "Invalid or expired token."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        logger.warning(f"Invalid password reset attempt with uid: {uid}")
+        return Response(
+            {"error": "Invalid reset link."}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )

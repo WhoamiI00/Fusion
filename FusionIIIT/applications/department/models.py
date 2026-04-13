@@ -3,7 +3,8 @@ from django.db import models
 from datetime import date
 
 # Create your models here.
-from applications.globals.models import ExtraInfo
+from applications.globals.models import ExtraInfo , DepartmentInfo
+
   
 class SpecialRequest(models.Model):
     request_maker = models.ForeignKey(ExtraInfo, on_delete=models.CASCADE)
@@ -21,11 +22,50 @@ class SpecialRequest(models.Model):
 
 class Announcements(models.Model):
     maker_id = models.ForeignKey(ExtraInfo, on_delete=models.CASCADE)
-    ann_date = models.DateTimeField(default="04-04-2021")
+    ann_date = models.DateTimeField(auto_now_add=True)
     message = models.CharField(max_length=200)
     batch = models.CharField(max_length=40,default="Year-1")
     department = models.CharField(max_length=40,default="ALL")
     programme = models.CharField(max_length=10)
-    upload_announcement = models.FileField(upload_to='department/upload_announcement', null=True, default=" ")
+    upload_announcement = models.FileField(upload_to='department/upload_announcement', null=True, default=None)
     def __str__(self):
         return str(self.maker_id.user.username)
+    
+class Information(models.Model):
+    department = models.OneToOneField(
+        DepartmentInfo,
+        on_delete=models.CASCADE,
+    )
+
+    phone_number = models.BigIntegerField()
+    email = models.CharField(max_length=200)
+    facilites = models.TextField()
+    labs = models.TextField()
+
+
+class Lab(models.Model):
+    department = models.CharField(max_length=50)  # Store department as a string field instead of a foreign key
+    location = models.CharField(max_length=200)
+    name = models.CharField(max_length=100)
+    capacity = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.name} ({self.department})"
+
+class Feedback(models.Model):
+    department = models.CharField(max_length=50)  # no need to validate department name
+    rating = models.CharField(max_length=20)
+    remark = models.TextField()
+
+    def __str__(self):
+        return f"{self.department} - {self.rating}"
+    
+class Facility(models.Model):
+    name = models.CharField(max_length=100)
+    branch = models.CharField(max_length=50)  # No foreign key, just a plain string
+    location = models.CharField(max_length=200)
+    amount = models.PositiveIntegerField(default=0)  # New amount field
+    picture = models.ImageField(upload_to='department/facility_pictures/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.branch} - {self.name}"
