@@ -46,11 +46,13 @@ codebase. Role levels are stored on the `HostAuthority` model
       `DataOperationsView`, `VisitorHistoryView`,
       `VisitorHistoryByVisitView`, `IncidentHistoryView`,
       `BlacklistAuditView` — `[IsAuthenticated, IsVmsAdmin]`.
-    * `VIPProcessView`, `VIPVisitorsView`, `VIPActivityView`,
-      `EscortAssignView`, `EscortReleaseView` —
+    * `VIPProcessView`, `VIPVisitorsView`, `VIPActivityView` —
       `[IsAuthenticated, IsVmsAdmin]`. Admin-only because VIP flagging
-      changes pass validity and triggers notifications, and escort
-      assignment is privileged security coordination (BR-046).
+      changes pass validity and triggers notifications.
+    * `EscortAssignView`, `EscortReleaseView`, `AvailableEscortsView` —
+      moved down to `[IsAuthenticated]` (Security Staff tier) so gate
+      officers can assign / release escorts directly when a high-level
+      VIP arrives (BR-046). See Security Staff permissions below.
 
 ---
 
@@ -92,16 +94,30 @@ codebase. Role levels are stored on the `HostAuthority` model
     * Scan visitor passes at checkpoints and perform manual fallback
       verification (BR-019–BR-023).
     * Deny entry with reason codes and escalate if required.
-    * Log security incidents (low/medium severity) without the visit.
+    * Log security incidents (any severity) against the current visit or
+      as a standalone checkpoint incident. Incident logging lives on the
+      Security Staff console (`VmsStaffPage`) — gate officers are the
+      ones who witness incidents, so creation is a staff-tier action.
     * View active visitors, recent visits, and incident feed
       (list responses use `VisitorPublicSerializer`, which masks
       `id_number` and omits contact fields).
+    * Assign and release escort personnel for VIP visits (BR-046).
+      Escort coordination is a gate-side action: the service-layer rule
+      in `services.assign_escort` requires `visit.is_vip = True`, so
+      Staff cannot attach an escort to a non-VIP visit. The numeric
+      `escort_threshold` config remains the *auto*-escort trigger
+      inside `process_vip_visit` (admin-initiated).
 * **Enforced at:**
     * `RegisterVisitorView`, `VerifyVisitorView`, `IssuePassView`,
       `RecordEntryView`, `RecordExitView`, `DenyEntryView`,
       `ActiveVisitorsView`, `RecentVisitsView`, `ScanPassView`,
       `ManualVerificationView`, `SecurityIncidentView` — all require
       `IsAuthenticated` only (the baseline role for this tier).
+    * `EscortAssignView`, `EscortReleaseView`, `AvailableEscortsView`
+      — `[IsAuthenticated]`. Business-rule enforcement
+      (`vip_level >= escort_threshold`, availability check, no
+      duplicate active assignment) is handled in
+      `services.assign_escort`.
 
 ---
 
@@ -153,6 +169,7 @@ codebase. Role levels are stored on the `HostAuthority` model
 | Receive host notifications                    |  —    | Yes  |   —    |   Yes    |  Yes    |   Yes   |
 | Register / verify / issue pass / entry / exit |  —    |  —   |  Yes   |   Yes    |  Yes    |   Yes   |
 | Scan pass / log incident                      |  —    |  —   |  Yes   |   Yes    |  Yes    |   Yes   |
+| Assign / release VIP escort                   |  —    |  —   |  Yes   |   Yes    |  Yes    |   Yes   |
 | Approve visit request                         |  —    |  —   |   —    |   Yes    |  Yes    |   Yes   |
 | VIP approval bypass                           |  —    |  —   |   —    |   Yes*   |  Yes    |   Yes   |
 | Add to blacklist                               |  —    |  —   |   —    |    —     |  Yes    |   Yes   |

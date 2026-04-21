@@ -454,10 +454,11 @@ class VIPVisitorsView(APIView):
 
 
 class EscortAssignView(APIView):
-    """Manage escort assignments. Admin-only — escort assignment is a
-    privileged security-coordination action (BR-046)."""
+    """Manage escort assignments (BR-046). Staff-accessible: gate officers
+    coordinate escorts directly when a high-level VIP arrives, so assignment
+    must be available to the security-staff tier rather than admin-only."""
 
-    permission_classes = [IsAuthenticated, IsVmsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         escorts = get_active_escorts()
@@ -479,7 +480,7 @@ class EscortAssignView(APIView):
 
 
 class EscortReleaseView(APIView):
-    permission_classes = [IsAuthenticated, IsVmsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, assignment_id):
         assignment = release_escort(assignment_id, request.user)
@@ -489,7 +490,7 @@ class EscortReleaseView(APIView):
 class AvailableEscortsView(APIView):
     """BR-046: List qualified escort personnel who are currently available."""
 
-    permission_classes = [IsAuthenticated, IsVmsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         escorts = get_available_escorts()

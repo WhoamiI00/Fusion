@@ -121,6 +121,12 @@ class RegisterVisitorSerializer(serializers.Serializer):
     host_contact = serializers.CharField(required=False, allow_blank=True)
     expected_duration_minutes = serializers.IntegerField(min_value=5, default=60)
     is_vip = serializers.BooleanField(default=False)
+    # BR-046: optional numeric VIP level at registration time so Staff can
+    # flag a visit as escort-eligible (>= configured escort_threshold) without
+    # a separate VIP-process step. Defaults to 0 (non-VIP).
+    vip_level = serializers.IntegerField(
+        required=False, min_value=0, max_value=10, default=0
+    )
 
 
 class VerifyVisitorSerializer(serializers.Serializer):
@@ -185,9 +191,32 @@ class ManualVerificationSerializer(serializers.Serializer):
 
 # --- Blacklist management (BR-030–035) ---
 class BlacklistCreateSerializer(serializers.Serializer):
-    id_number = serializers.CharField()
+    # Accept either the raw id_number OR a visit_id that resolves to one.
+    # Exactly one of the two must be supplied.
+    id_number = serializers.CharField(required=False, allow_blank=True)
+    visit_id = serializers.IntegerField(required=False, allow_null=True)
     reason = serializers.CharField()
     evidence = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        id_number = (attrs.get("id_number") or "").strip()
+        visit_id = attrs.get("visit_id")
+        if not id_number and not visit_id:
+            raise serializers.ValidationError(
+                "Provide either id_number or visit_id."
+            )
+        if visit_id and not id_number:
+            from ..models import Visit
+            try:
+                visit = Visit.objects.select_related("visitor").get(id=visit_id)
+            except Visit.DoesNotExist as exc:
+                raise serializers.ValidationError(
+                    f"Visit id={visit_id} not found."
+                ) from exc
+            attrs["id_number"] = visit.visitor.id_number
+        else:
+            attrs["id_number"] = id_number
+        return attrs
 
 
 class BlacklistEntrySerializer(serializers.ModelSerializer):

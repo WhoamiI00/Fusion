@@ -161,6 +161,13 @@ def register_visitor(data):
         },
     )
 
+    # BR-046: allow registering with an explicit vip_level so the visit is
+    # escort-eligible immediately. If is_vip is set but vip_level is 0,
+    # coerce to 1 so the visit isn't silently downgraded.
+    vip_level = int(data.get("vip_level") or 0)
+    if is_vip and vip_level == 0:
+        vip_level = 1
+
     visit = Visit.objects.create(
         visitor=visitor,
         purpose=data["purpose"],
@@ -169,6 +176,7 @@ def register_visitor(data):
         host_contact=data.get("host_contact", ""),
         expected_duration_minutes=duration,
         is_vip=is_vip,
+        vip_level=vip_level,
     )
 
     # BR-005: unique request ID
@@ -305,17 +313,21 @@ def record_entry(data, user):
 def record_exit(data, user):
     """Record a visitor exit. Returns the visit.
 
+    Also auto-releases any active escort assignments on the visit, since
+    the escort's duty ends the moment the VIP leaves campus.
+
     Raises WorkflowError if the visitor is not inside.
     """
     visit = get_object_or_404(Visit, id=data["visit_id"])
     if visit.status != Visit.STATUS_INSIDE:
         raise WorkflowError("Visitor is not inside.")
 
+    staff = get_current_staff(user)
     EntryExitLog.objects.create(
         visit=visit,
         action=EntryExitLog.ACTION_EXIT,
         gate_name=data["gate_name"],
-        recorded_by=get_current_staff(user),
+        recorded_by=staff,
         items_declared=data.get("items_declared", ""),
     )
 
@@ -327,6 +339,21 @@ def record_exit(data, user):
     if visitor_pass:
         visitor_pass.status = VisitorPass.PASS_RETURNED
         visitor_pass.save(update_fields=["status"])
+
+    # Auto-release any active escort assignments — the escort's duty ends
+    # when the visitor leaves campus.
+    active_escorts = EscortAssignment.objects.filter(
+        visit=visit, released_at__isnull=True
+    )
+    for assignment in active_escorts:
+        assignment.released_at = timezone.now()
+        assignment.save(update_fields=["released_at"])
+        VIPActivityLog.objects.create(
+            visit=visit,
+            action="escort_auto_released",
+            details=f"Escort {assignment.escort} released on visitor exit",
+            recorded_by=staff,
+        )
 
     return visit
 
@@ -627,28 +654,35 @@ def process_vip_visit(data, user):
 
 
 def assign_escort(data, user):
-    """BR-046: Assign a dedicated escort to a high-level VIP visitor.
+    """BR-046: Assign a dedicated escort to a VIP visitor.
 
-    Canonical rule:
-        IF vip_level >= escort_threshold AND escort_available
+    Policy (staff-tier manual assignment):
+        IF visit.is_vip AND escort_available
         THEN assign_escort(qualified_personnel)
 
+    The numeric `escort_threshold` is retained as the *auto*-escort trigger
+    inside `process_vip_visit`. Manual assignment by Security Staff only
+    requires that the visit is flagged VIP, so a gate officer can request
+    an escort for any VIP without first elevating vip_level via admin
+    tooling.
+
     Enforcement:
-      * The visit must have vip_level >= configured escort_threshold.
+      * The visit must be VIP (`is_vip=True`).
       * If a specific escort_id is supplied it must not currently hold an
         unreleased assignment; if omitted we pick the first available
         qualified staff member.
-      * Raises WorkflowError when the rule's precondition is not met.
+      * Only one active escort per visit at a time.
+      * Raises WorkflowError when the precondition is not met.
     """
     from applications.globals.models import ExtraInfo
 
     visit = get_object_or_404(Visit, id=data["visit_id"])
 
-    threshold = _get_escort_threshold()
-    if visit.vip_level < threshold:
+    if not visit.is_vip:
         raise WorkflowError(
-            f"Escort not required: visit vip_level={visit.vip_level} "
-            f"is below configured escort_threshold={threshold}."
+            "Escort assignment requires the visit to be marked VIP. "
+            "Re-register the visitor with the VIP flag, or have an admin "
+            "run VIP processing on this visit first."
         )
 
     # Resolve the escort. Explicit escort_id wins; fall back to auto-pick.
@@ -685,7 +719,7 @@ def assign_escort(data, user):
         action="escort_assigned",
         details=(
             f"Escort: {escort_staff} (vip_level={visit.vip_level}, "
-            f"threshold={threshold})"
+            f"auto_escort_threshold={_get_escort_threshold()})"
         ),
         recorded_by=recorder,
     )
